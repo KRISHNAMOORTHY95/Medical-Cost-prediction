@@ -214,13 +214,10 @@ elif page == "📊 Visualizations":
 
    def show_no_of_policyholders():
        fig, ax = plt.subplots(figsize=(10, 6))
-    
        region_map = {0: 'Northeast', 1: 'Southeast', 2: 'Southwest', 3: 'Northwest'}
        df['region_name'] = df['region'].map(region_map)
-    
        region_counts = df['region_name'].value_counts().reindex(region_map.values(), fill_value=0)
        colors = ['#1f77b4', '#ff7f0e', '#2ca02c', '#d62728']
-    
        bars = ax.bar(region_counts.index, region_counts.values, color=colors, alpha=0.8)
        ax.set_title('Number of Policyholders by Region', fontsize=16, fontweight='bold')
        ax.set_xlabel('Region', fontsize=12)
