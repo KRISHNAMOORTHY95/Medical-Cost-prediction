@@ -218,7 +218,8 @@ elif page == "📊 Visualizations":
         region_labels = ['Northeast', 'Southeast', 'Southwest', 'Northwest']
         region_counts = df['region'].value_counts().sort_index()
         plt.figure(figsize=(10, 6))
-        bars = plt.bar(region_labels, region_counts.values, color='Set3', alpha=0.8)
+        colors = ['#8dd3c7', '#ffffb3', '#bebada', '#fb8072']  # Set3 colors
+        bars = plt.bar(region_labels, region_counts.values, color=colors, alpha=0.8)
         plt.title('Number of Policyholders by Region', fontsize=16, fontweight='bold')
         plt.xlabel('Region', fontsize=12)
         plt.ylabel('Number of Policyholders', fontsize=12)
@@ -272,11 +273,17 @@ elif page == "📊 Visualizations":
     def correlation_children_charge():
         plt.figure(figsize=(10, 6))
         children_avg = df.groupby('children')['charges'].mean()
-        plt.bar(children_avg.index, children_avg.values, color='coolwarm', alpha=0.8)
+        colors = plt.cm.coolwarm(np.linspace(0, 1, len(children_avg)))
+        bars = plt.bar(children_avg.index, children_avg.values, color=colors, alpha=0.8)
         plt.title('Average Charges by Number of Children', fontsize=16, fontweight='bold')
         plt.xlabel('Number of Children', fontsize=12)
         plt.ylabel('Average Charges ($)', fontsize=12)
         plt.grid(True, alpha=0.3, axis='y')
+        
+        # Add value labels on bars
+        for bar, avg_charge in zip(bars, children_avg.values):
+            plt.text(bar.get_x() + bar.get_width()/2, bar.get_height() + 100, 
+                    f'${avg_charge:,.0f}', ha='center', va='bottom')
 
     def numeric_features():
         numeric_cols = ['age', 'bmi', 'children', 'charges']
