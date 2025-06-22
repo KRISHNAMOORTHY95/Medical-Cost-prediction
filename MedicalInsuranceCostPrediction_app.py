@@ -4,7 +4,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
 
-model = joblib.load("model.pkl")
+model = joblib.load("/content/model.pkl")
 
 df = pd.read_csv("/content/medical_insurance.csv")  # Load your dataset
 
