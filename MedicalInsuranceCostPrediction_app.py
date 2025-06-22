@@ -6,7 +6,7 @@ import seaborn as sns
 
 model = joblib.load("model.pkl")
 
-df = pd.read_csv("medical_insurance.csv")  # Load your dataset
+df = pd.read_csv("/content/medical_insurance.csv")  # Load your dataset
 
 # Navigation
 st.sidebar.title("Navigation")
@@ -196,7 +196,7 @@ elif page == "Visualizations":
         plt.axvline(0, color='gray', linestyle='--')
         plt.tight_layout()
 
-   
+
     questions = {
         "1. Distribution of Charges": distribution_of_charges,
         "2. Age Distribution": age_distribution,
@@ -219,7 +219,7 @@ elif page == "Visualizations":
     }
 
     selected_question = st.selectbox("Select a question to visualize:", list(questions.keys()))
-    questions[selected_question]() 
+    questions[selected_question]()
     fig = plt.gcf()
     st.pyplot(fig)
 
@@ -260,4 +260,3 @@ elif page == "Cost Prediction":
         prediction = model.predict(input_data)[0]
         st.success(f" Predicted Insurance Cost: {prediction:,.2f}")
 
-   
