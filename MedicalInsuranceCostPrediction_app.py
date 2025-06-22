@@ -213,16 +213,18 @@ elif page == "📊 Visualizations":
         return fig
 
    def show_no_of_policyholders():
-       fig, ax = plt.subplots(figsize=(10, 6))
-       region_map = {0: 'Northeast', 1: 'Southeast', 2: 'Southwest', 3: 'Northwest'}
-       df['region_name'] = df['region'].map(region_map)
-       region_counts = df['region_name'].value_counts().reindex(region_map.values(), fill_value=0)
-       colors = ['#1f77b4', '#ff7f0e', '#2ca02c', '#d62728']
-       bars = ax.bar(region_counts.index, region_counts.values, color=colors, alpha=0.8)
-       ax.set_title('Number of Policyholders by Region', fontsize=16, fontweight='bold')
-       ax.set_xlabel('Region', fontsize=12)
-       ax.set_ylabel('Number of Policyholders', fontsize=12)
-       ax.grid(True, alpha=0.3, axis='y')
+       region_counts = df['region'].value_counts()
+       print("Policyholders per region:\n", region_counts)
+       print("\nPercentage distribution:")
+       print(df['region'].value_counts(normalize=True) * 100)
+
+       plt.figure(figsize=(8, 5))
+       sns.countplot(x='region', data=df, palette='Set3', order=region_counts.index)
+       plt.title('Number of Policyholders by Region')
+       plt.xlabel('Region')
+       plt.ylabel('Number of Policyholders')
+       plt.tight_layout()
+       plt.show()
     
     for bar, count in zip(bars, region_counts.values):
         ax.text(bar.get_x() + bar.get_width()/2, bar.get_height() + 5, 
