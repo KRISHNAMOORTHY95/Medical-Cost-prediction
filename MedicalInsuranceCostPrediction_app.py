@@ -189,14 +189,13 @@ elif page == "📊 Visualizations":
 
     def show_smoker_non_smoker():
         fig, ax = plt.subplots(figsize=(8, 6))
-        smoker_counts = df['smoker'].value_counts()
-        labels = ['Non-Smoker', 'Smoker']
-        sns.countplot(x='smoker', data=df, palette='Set2', ax=ax)
+        df['smoker_label'] = df['smoker'].map({0: 'Non-Smoker', 1: 'Smoker'})
+        smoker_counts = df['smoker_label'].value_counts().reindex(['Non-Smoker', 'Smoker'], fill_value=0)
+        
+        sns.countplot(x='smoker_label', data=df, palette='Set2', order=['Non-Smoker', 'Smoker'], ax=ax)
         ax.set_title('Count of Smokers vs Non-Smokers', fontsize=16, fontweight='bold')
         ax.set_xlabel('Smoking Status', fontsize=12)
         ax.set_ylabel('Number of Individuals', fontsize=12)
-        ax.set_xticks([0, 1])
-        ax.set_xticklabels(labels)
         return fig
 
     def show_avg_bmi():
@@ -212,25 +211,22 @@ elif page == "📊 Visualizations":
         ax.grid(True, alpha=0.3)
         return fig
 
-   def show_no_of_policyholders():
-       region_counts = df['region'].value_counts()
-       print("Policyholders per region:\n", region_counts)
-       print("\nPercentage distribution:")
-       print(df['region'].value_counts(normalize=True) * 100)
-
-       plt.figure(figsize=(8, 5))
-       sns.countplot(x='region', data=df, palette='Set3', order=region_counts.index)
-       plt.title('Number of Policyholders by Region')
-       plt.xlabel('Region')
-       plt.ylabel('Number of Policyholders')
-       plt.tight_layout()
-       plt.show()
-    
-    for bar, count in zip(bars, region_counts.values):
-        ax.text(bar.get_x() + bar.get_width()/2, bar.get_height() + 5, 
-                str(count), ha='center', va='bottom')
+    def show_no_of_policyholders():
+        fig, ax = plt.subplots(figsize=(8, 6))
+        region_counts = df['region'].value_counts()
+        region_labels = ['Northeast', 'Southeast', 'Southwest', 'Northwest']
+        
+        bars = ax.bar(range(len(region_counts)), region_counts.values, color=plt.cm.Set3(np.linspace(0, 1, len(region_counts))))
+        ax.set_title('Number of Policyholders by Region', fontsize=16, fontweight='bold')
+        ax.set_xlabel('Region', fontsize=12)
+        ax.set_ylabel('Number of Policyholders', fontsize=12)
+        ax.set_xticks(range(len(region_counts)))
+        ax.set_xticklabels([region_labels[i] for i in region_counts.index])
+        
+        for bar, count in zip(bars, region_counts.values):
+            ax.text(bar.get_x() + bar.get_width()/2, bar.get_height() + 5, 
+                    str(count), ha='center', va='bottom')
         return fig
-
 
     def show_charge_age():
         fig, ax = plt.subplots(figsize=(12, 8))
@@ -244,18 +240,16 @@ elif page == "📊 Visualizations":
         ax.grid(True, alpha=0.3)
         return fig
 
-    def show_smoker_non_smoker():
-       fig, ax = plt.subplots(figsize=(8, 6))
-    
-       df['smoker_label'] = df['smoker'].map({0: 'Non-Smoker', 1: 'Smoker'})
-       smoker_counts = df['smoker_label'].value_counts().reindex(['Non-Smoker', 'Smoker'], fill_value=0)
-    
-       sns.countplot(x='smoker_label', data=df, palette='Set2', order=['Non-Smoker', 'Smoker'], ax=ax)
-       ax.set_title('Count of Smokers vs Non-Smokers', fontsize=16, fontweight='bold')
-       ax.set_xlabel('Smoking Status', fontsize=12)
-       ax.set_ylabel('Number of Individuals', fontsize=12)
-       return fig
-
+    def show_charges_smokervsnon():
+        fig, ax = plt.subplots(figsize=(10, 6))
+        df['smoker_label'] = df['smoker'].map({0: 'Non-Smoker', 1: 'Smoker'})
+        sns.boxplot(x='smoker_label', y='charges', data=df, palette='Set2', 
+                   order=['Non-Smoker', 'Smoker'], ax=ax)
+        ax.set_title('Medical Charges: Smokers vs Non-Smokers', fontsize=16, fontweight='bold')
+        ax.set_xlabel('Smoking Status', fontsize=12)
+        ax.set_ylabel('Charges ($)', fontsize=12)
+        ax.grid(True, alpha=0.3, axis='y')
+        return fig
 
     def show_bmi_charge():
         fig, ax = plt.subplots(figsize=(12, 8))
@@ -271,35 +265,30 @@ elif page == "📊 Visualizations":
 
     def show_men_women_charge():
         fig, ax = plt.subplots(figsize=(10, 6))
-    
         df['sex_label'] = df['sex'].map({0: 'Female', 1: 'Male'})
         sns.boxplot(x='sex_label', y='charges', data=df, palette='pastel', 
-                order=['Female', 'Male'], ax=ax)
-    
+                   order=['Female', 'Male'], ax=ax)
         ax.set_title('Medical Charges: Male vs Female', fontsize=16, fontweight='bold')
         ax.set_xlabel('Gender', fontsize=12)
         ax.set_ylabel('Charges ($)', fontsize=12)
         ax.grid(True, alpha=0.3, axis='y')
         return fig
 
-
     def show_correlation_children_charge():
         fig, ax = plt.subplots(figsize=(10, 6))
-    
         children_avg = df.groupby('children')['charges'].mean().reindex(range(0, 6), fill_value=0)
         colors = plt.cm.viridis(np.linspace(0, 1, len(children_avg)))
-    
+        
         bars = ax.bar(children_avg.index, children_avg.values, color=colors, alpha=0.8)
         ax.set_title('Average Charges by Number of Children', fontsize=16, fontweight='bold')
         ax.set_xlabel('Number of Children', fontsize=12)
         ax.set_ylabel('Average Charges ($)', fontsize=12)
         ax.grid(True, alpha=0.3, axis='y')
-    
+        
         for bar, avg_charge in zip(bars, children_avg.values):
-        ax.text(bar.get_x() + bar.get_width()/2, bar.get_height() + 100, 
-                f'${avg_charge:,.0f}', ha='center', va='bottom')
+            ax.text(bar.get_x() + bar.get_width()/2, bar.get_height() + 100, 
+                    f'${avg_charge:,.0f}', ha='center', va='bottom')
         return fig
-
 
     def show_numeric_features():
         fig, ax = plt.subplots(figsize=(8, 6))
