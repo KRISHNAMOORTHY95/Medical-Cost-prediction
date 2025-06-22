@@ -212,20 +212,31 @@ elif page == "📊 Visualizations":
         return fig
 
     def show_no_of_policyholders():
-        fig, ax = plt.subplots(figsize=(8, 6))
-        region_counts = df['region'].value_counts()
+        fig, ax = plt.subplots(figsize=(10, 6))
+        region_counts = df['region'].value_counts().sort_index()
         region_labels = ['Northeast', 'Southeast', 'Southwest', 'Northwest']
         
-        bars = ax.bar(range(len(region_counts)), region_counts.values, color=plt.cm.Set3(np.linspace(0, 1, len(region_counts))))
+        # Create color palette
+        colors = plt.cm.Set3(np.linspace(0, 1, len(region_counts)))
+        
+        # Create bar chart
+        bars = ax.bar(region_labels, region_counts.values, color=colors, alpha=0.8)
+        
+        # Styling
         ax.set_title('Number of Policyholders by Region', fontsize=16, fontweight='bold')
         ax.set_xlabel('Region', fontsize=12)
         ax.set_ylabel('Number of Policyholders', fontsize=12)
-        ax.set_xticks(range(len(region_counts)))
-        ax.set_xticklabels([region_labels[i] for i in region_counts.index])
+        ax.grid(True, alpha=0.3, axis='y')
         
+        # Add value labels on bars
         for bar, count in zip(bars, region_counts.values):
             ax.text(bar.get_x() + bar.get_width()/2, bar.get_height() + 5, 
-                    str(count), ha='center', va='bottom')
+                    str(count), ha='center', va='bottom', fontweight='bold')
+        
+        # Rotate x-axis labels if needed
+        plt.xticks(rotation=45, ha='right')
+        plt.tight_layout()
+        
         return fig
 
     def show_charge_age():
