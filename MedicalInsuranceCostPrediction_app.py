@@ -212,22 +212,26 @@ elif page == "📊 Visualizations":
         ax.grid(True, alpha=0.3)
         return fig
 
-    def show_no_of_policyholders():
-        fig, ax = plt.subplots(figsize=(10, 6))
-        region_labels = ['Northeast', 'Southeast', 'Southwest', 'Northwest']
-        region_counts = df['region'].value_counts().sort_index()
-        colors = ['#1f77b4', '#ff7f0e', '#2ca02c', '#d62728']  # Default matplotlib colors
-        bars = ax.bar(region_labels, region_counts.values, color=colors, alpha=0.8)
-        ax.set_title('Number of Policyholders by Region', fontsize=16, fontweight='bold')
-        ax.set_xlabel('Region', fontsize=12)
-        ax.set_ylabel('Number of Policyholders', fontsize=12)
-        ax.grid(True, alpha=0.3, axis='y')
-        
-        # Add value labels on bars
-        for bar, count in zip(bars, region_counts.values):
-            ax.text(bar.get_x() + bar.get_width()/2, bar.get_height() + 5, 
-                    str(count), ha='center', va='bottom')
+   def show_no_of_policyholders():
+       fig, ax = plt.subplots(figsize=(10, 6))
+    
+       region_map = {0: 'Northeast', 1: 'Southeast', 2: 'Southwest', 3: 'Northwest'}
+       df['region_name'] = df['region'].map(region_map)
+    
+       region_counts = df['region_name'].value_counts().reindex(region_map.values(), fill_value=0)
+       colors = ['#1f77b4', '#ff7f0e', '#2ca02c', '#d62728']
+    
+       bars = ax.bar(region_counts.index, region_counts.values, color=colors, alpha=0.8)
+       ax.set_title('Number of Policyholders by Region', fontsize=16, fontweight='bold')
+       ax.set_xlabel('Region', fontsize=12)
+       ax.set_ylabel('Number of Policyholders', fontsize=12)
+       ax.grid(True, alpha=0.3, axis='y')
+    
+    for bar, count in zip(bars, region_counts.values):
+        ax.text(bar.get_x() + bar.get_width()/2, bar.get_height() + 5, 
+                str(count), ha='center', va='bottom')
         return fig
+
 
     def show_charge_age():
         fig, ax = plt.subplots(figsize=(12, 8))
@@ -241,15 +245,18 @@ elif page == "📊 Visualizations":
         ax.grid(True, alpha=0.3)
         return fig
 
-    def show_charges_smokervsnon():
-        fig, ax = plt.subplots(figsize=(10, 6))
-        smoker_labels = df['smoker'].map({0: 'Non-Smoker', 1: 'Smoker'})
-        sns.boxplot(x=smoker_labels, y='charges', data=df.assign(smoker=smoker_labels), palette='Set2', ax=ax)
-        ax.set_title('Medical Charges: Smokers vs Non-Smokers', fontsize=16, fontweight='bold')
-        ax.set_xlabel('Smoking Status', fontsize=12)
-        ax.set_ylabel('Charges ($)', fontsize=12)
-        ax.grid(True, alpha=0.3, axis='y')
-        return fig
+    def show_smoker_non_smoker():
+       fig, ax = plt.subplots(figsize=(8, 6))
+    
+       df['smoker_label'] = df['smoker'].map({0: 'Non-Smoker', 1: 'Smoker'})
+       smoker_counts = df['smoker_label'].value_counts().reindex(['Non-Smoker', 'Smoker'], fill_value=0)
+    
+       sns.countplot(x='smoker_label', data=df, palette='Set2', order=['Non-Smoker', 'Smoker'], ax=ax)
+       ax.set_title('Count of Smokers vs Non-Smokers', fontsize=16, fontweight='bold')
+       ax.set_xlabel('Smoking Status', fontsize=12)
+       ax.set_ylabel('Number of Individuals', fontsize=12)
+       return fig
+
 
     def show_bmi_charge():
         fig, ax = plt.subplots(figsize=(12, 8))
@@ -265,30 +272,35 @@ elif page == "📊 Visualizations":
 
     def show_men_women_charge():
         fig, ax = plt.subplots(figsize=(10, 6))
-        sex_labels = df['sex'].map({0: 'Female', 1: 'Male'})
-        sns.boxplot(x=sex_labels, y='charges', data=df.assign(sex=sex_labels), palette='pastel', ax=ax)
+    
+        df['sex_label'] = df['sex'].map({0: 'Female', 1: 'Male'})
+        sns.boxplot(x='sex_label', y='charges', data=df, palette='pastel', 
+                order=['Female', 'Male'], ax=ax)
+    
         ax.set_title('Medical Charges: Male vs Female', fontsize=16, fontweight='bold')
         ax.set_xlabel('Gender', fontsize=12)
         ax.set_ylabel('Charges ($)', fontsize=12)
         ax.grid(True, alpha=0.3, axis='y')
         return fig
 
+
     def show_correlation_children_charge():
         fig, ax = plt.subplots(figsize=(10, 6))
-        children_avg = df.groupby('children')['charges'].mean()
-        n_bars = len(children_avg)
-        colors = plt.cm.viridis(np.linspace(0, 1, n_bars))
+    
+        children_avg = df.groupby('children')['charges'].mean().reindex(range(0, 6), fill_value=0)
+        colors = plt.cm.viridis(np.linspace(0, 1, len(children_avg)))
+    
         bars = ax.bar(children_avg.index, children_avg.values, color=colors, alpha=0.8)
         ax.set_title('Average Charges by Number of Children', fontsize=16, fontweight='bold')
         ax.set_xlabel('Number of Children', fontsize=12)
         ax.set_ylabel('Average Charges ($)', fontsize=12)
         ax.grid(True, alpha=0.3, axis='y')
-        
-        # Add value labels on bars
+    
         for bar, avg_charge in zip(bars, children_avg.values):
-            ax.text(bar.get_x() + bar.get_width()/2, bar.get_height() + 100, 
-                    f'${avg_charge:,.0f}', ha='center', va='bottom')
+        ax.text(bar.get_x() + bar.get_width()/2, bar.get_height() + 100, 
+                f'${avg_charge:,.0f}', ha='center', va='bottom')
         return fig
+
 
     def show_numeric_features():
         fig, ax = plt.subplots(figsize=(8, 6))
