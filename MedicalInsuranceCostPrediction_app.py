@@ -188,14 +188,36 @@ elif page == "📊 Visualizations":
         return fig
 
     def show_smoker_non_smoker():
-        fig, ax = plt.subplots(figsize=(8, 6))
+        fig, ax = plt.subplots(figsize=(10, 6))
+        
+        # Create smoker labels
         df['smoker_label'] = df['smoker'].map({0: 'Non-Smoker', 1: 'Smoker'})
         smoker_counts = df['smoker_label'].value_counts().reindex(['Non-Smoker', 'Smoker'], fill_value=0)
         
+        # Create count plot
         sns.countplot(x='smoker_label', data=df, palette='Set2', order=['Non-Smoker', 'Smoker'], ax=ax)
+        
+        # Styling
         ax.set_title('Count of Smokers vs Non-Smokers', fontsize=16, fontweight='bold')
         ax.set_xlabel('Smoking Status', fontsize=12)
         ax.set_ylabel('Number of Individuals', fontsize=12)
+        ax.grid(True, alpha=0.3, axis='y')
+        
+        # Add value labels on bars
+        for i, bar in enumerate(ax.patches):
+            height = bar.get_height()
+            ax.text(bar.get_x() + bar.get_width()/2, height + 5,
+                   f'{int(height)}', ha='center', va='bottom', fontweight='bold')
+        
+        # Add percentage labels
+        total = len(df)
+        for i, bar in enumerate(ax.patches):
+            height = bar.get_height()
+            percentage = (height / total) * 100
+            ax.text(bar.get_x() + bar.get_width()/2, height/2,
+                   f'{percentage:.1f}%', ha='center', va='center', 
+                   fontweight='bold', color='white', fontsize=12)
+        
         return fig
 
     def show_avg_bmi():
@@ -252,14 +274,62 @@ elif page == "📊 Visualizations":
         return fig
 
     def show_charges_smokervsnon():
-        fig, ax = plt.subplots(figsize=(10, 6))
+        fig, ax = plt.subplots(figsize=(12, 6))
+        
+        # Create smoker labels
         df['smoker_label'] = df['smoker'].map({0: 'Non-Smoker', 1: 'Smoker'})
+        
+        # Create boxplot with enhanced styling
         sns.boxplot(x='smoker_label', y='charges', data=df, palette='Set2', 
                    order=['Non-Smoker', 'Smoker'], ax=ax)
+        
+        # Styling
         ax.set_title('Medical Charges: Smokers vs Non-Smokers', fontsize=16, fontweight='bold')
         ax.set_xlabel('Smoking Status', fontsize=12)
         ax.set_ylabel('Charges ($)', fontsize=12)
         ax.grid(True, alpha=0.3, axis='y')
+        
+        # Format y-axis to show currency
+        ax.yaxis.set_major_formatter(plt.FuncFormatter(lambda x, p: f'${x:,.0f}'))
+        
+        # Calculate statistics
+        nonsmoker_data = df[df['smoker_label'] == 'Non-Smoker']['charges']
+        smoker_data = df[df['smoker_label'] == 'Smoker']['charges']
+        
+        nonsmoker_median = nonsmoker_data.median()
+        smoker_median = smoker_data.median()
+        nonsmoker_mean = nonsmoker_data.mean()
+        smoker_mean = smoker_data.mean()
+        
+        # Calculate the difference
+        median_diff = smoker_median - nonsmoker_median
+        mean_diff = smoker_mean - nonsmoker_mean
+        
+        # Add statistical annotations
+        stats_text = f'Non-Smoker - Median: ${nonsmoker_median:,.0f}, Mean: ${nonsmoker_mean:,.0f}\n'
+        stats_text += f'Smoker - Median: ${smoker_median:,.0f}, Mean: ${smoker_mean:,.0f}\n'
+        stats_text += f'Difference - Median: ${median_diff:,.0f}, Mean: ${mean_diff:,.0f}'
+        
+        ax.text(0.02, 0.98, stats_text, transform=ax.transAxes, fontsize=10,
+               verticalalignment='top', bbox=dict(boxstyle='round', facecolor='lightcoral', alpha=0.8))
+        
+        # Add sample size information
+        nonsmoker_count = len(nonsmoker_data)
+        smoker_count = len(smoker_data)
+        
+        ax.text(0, -0.08, f'n = {nonsmoker_count}', transform=ax.transData, 
+               ha='center', va='top', fontweight='bold')
+        ax.text(1, -0.08, f'n = {smoker_count}', transform=ax.transData, 
+               ha='center', va='top', fontweight='bold')
+        
+        # Add a striking visual indicator of the difference
+        ax.annotate('', xy=(1, smoker_median), xytext=(0, nonsmoker_median),
+                   arrowprops=dict(arrowstyle='<->', color='red', lw=2))
+        ax.text(0.5, (smoker_median + nonsmoker_median) / 2, 
+               f'${median_diff:,.0f}\nDifference', 
+               ha='center', va='center', fontweight='bold', color='red',
+               bbox=dict(boxstyle='round', facecolor='white', alpha=0.8))
+        
         return fig
 
     def show_bmi_charge():
@@ -275,14 +345,46 @@ elif page == "📊 Visualizations":
         return fig
 
     def show_men_women_charge():
-        fig, ax = plt.subplots(figsize=(10, 6))
+        fig, ax = plt.subplots(figsize=(12, 6))
+        
+        # Create gender labels
         df['sex_label'] = df['sex'].map({0: 'Female', 1: 'Male'})
+        
+        # Create boxplot
         sns.boxplot(x='sex_label', y='charges', data=df, palette='pastel', 
                    order=['Female', 'Male'], ax=ax)
+        
+        # Styling
         ax.set_title('Medical Charges: Male vs Female', fontsize=16, fontweight='bold')
         ax.set_xlabel('Gender', fontsize=12)
         ax.set_ylabel('Charges ($)', fontsize=12)
         ax.grid(True, alpha=0.3, axis='y')
+        
+        # Format y-axis to show currency
+        ax.yaxis.set_major_formatter(plt.FuncFormatter(lambda x, p: f'${x:,.0f}'))
+        
+        # Add statistical annotations
+        female_median = df[df['sex_label'] == 'Female']['charges'].median()
+        male_median = df[df['sex_label'] == 'Male']['charges'].median()
+        female_mean = df[df['sex_label'] == 'Female']['charges'].mean()
+        male_mean = df[df['sex_label'] == 'Male']['charges'].mean()
+        
+        # Add text box with statistics
+        stats_text = f'Female - Median: ${female_median:,.0f}, Mean: ${female_mean:,.0f}\n'
+        stats_text += f'Male - Median: ${male_median:,.0f}, Mean: ${male_mean:,.0f}'
+        
+        ax.text(0.02, 0.98, stats_text, transform=ax.transAxes, fontsize=10,
+               verticalalignment='top', bbox=dict(boxstyle='round', facecolor='wheat', alpha=0.8))
+        
+        # Add sample size information
+        female_count = len(df[df['sex_label'] == 'Female'])
+        male_count = len(df[df['sex_label'] == 'Male'])
+        
+        ax.text(0, -0.1, f'n = {female_count}', transform=ax.transData, 
+               ha='center', va='top', fontweight='bold')
+        ax.text(1, -0.1, f'n = {male_count}', transform=ax.transData, 
+               ha='center', va='top', fontweight='bold')
+        
         return fig
 
     def show_correlation_children_charge():
