@@ -1,272 +1,115 @@
+
+# app.py
+
 import streamlit as st
 import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
 import numpy as np
-from sklearn.ensemble import RandomForestRegressor
 import pickle
+from sklearn.ensemble import RandomForestRegressor
 
-# Configure Streamlit page
+# Configure page
 st.set_page_config(page_title="Medical Insurance Cost Prediction", page_icon="🏥", layout="wide")
 
-
-# === Caching the Model ===
-@st.cache_resource
+# Load or create model
+@st.cache_data
 def load_or_create_model():
     try:
         with open('model.pkl', 'rb') as f:
             model = pickle.load(f)
         return model
     except FileNotFoundError:
-        st.warning("Model file not found. Training a sample model...")
-
+        st.warning("Model not found. Creating a new one with synthetic data.")
         np.random.seed(42)
         n = 1000
-        df_sample = pd.DataFrame({
+        df = pd.DataFrame({
             'age': np.random.randint(18, 65, n),
             'bmi': np.clip(np.random.normal(28, 6, n), 15, 50),
-            'children': np.random.randint(0, 6, n),
-            'smoker': np.random.choice([0, 1], n, p=[0.8, 0.2]),
+            'children': np.random.randint(0, 5, n),
             'sex': np.random.choice([0, 1], n),
+            'smoker': np.random.choice([0, 1], n, p=[0.8, 0.2]),
             'region': np.random.choice([0, 1, 2, 3], n)
         })
-        df_sample['charges'] = (
-            df_sample['age'] * 200 +
-            df_sample['bmi'] * 100 +
-            df_sample['children'] * 500 +
-            df_sample['smoker'] * 15000 +
-            df_sample['sex'] * 200 +
-            df_sample['region'] * 300 +
-            np.random.normal(0, 2000, n)
-        )
-
+        df['charges'] = (df['age'] * 200 + df['bmi'] * 100 + df['children'] * 500 +
+                         df['smoker'] * 15000 + df['sex'] * 200 + df['region'] * 300 +
+                         np.random.normal(0, 2000, n))
         model = RandomForestRegressor(n_estimators=100, random_state=42)
-        model.fit(df_sample.drop('charges', axis=1), df_sample['charges'])
-
+        model.fit(df.drop('charges', axis=1), df['charges'])
         with open('model.pkl', 'wb') as f:
             pickle.dump(model, f)
-
         return model
 
-
-# === Caching the Dataset ===
+# Load or create dataset
 @st.cache_data
 def load_or_create_dataset():
     try:
         df = pd.read_csv("medical_insurance.csv")
         return df
     except FileNotFoundError:
-        st.warning("Dataset not found. Generating sample dataset.")
-        np.random.seed(42)
-        n = 1000
-        df = pd.DataFrame({
-            'age': np.random.randint(18, 65, n),
-            'bmi': np.clip(np.random.normal(28, 6, n), 15, 50),
-            'children': np.random.randint(0, 6, n),
-            'smoker': np.random.choice([0, 1], n, p=[0.8, 0.2]),
-            'sex': np.random.choice([0, 1], n),
-            'region': np.random.choice([0, 1, 2, 3], n)
+        st.warning("Dataset not found. Using synthetic data.")
+        return pd.DataFrame({
+            'age': np.random.randint(18, 65, 1000),
+            'bmi': np.clip(np.random.normal(28, 6, 1000), 15, 50),
+            'children': np.random.randint(0, 5, 1000),
+            'sex': np.random.choice([0, 1], 1000),
+            'smoker': np.random.choice([0, 1], 1000, p=[0.8, 0.2]),
+            'region': np.random.choice([0, 1, 2, 3], 1000),
+            'charges': np.random.uniform(2000, 40000, 1000)
         })
-        df['charges'] = (
-            df['age'] * 200 +
-            df['bmi'] * 100 +
-            df['children'] * 500 +
-            df['smoker'] * 15000 +
-            df['sex'] * 200 +
-            df['region'] * 300 +
-            np.random.normal(0, 2000, n)
-        )
-        return df
 
-
-# === Load Data and Model ===
-df = load_or_create_dataset()
 model = load_or_create_model()
+df = load_or_create_dataset()
 
-# === Sidebar Navigation ===
-st.sidebar.title("🏥 Navigation")
-page = st.sidebar.radio("Go to", ["🏠 Introduction", "📊 Visualizations", "💰 Cost Prediction"])
+st.sidebar.title("Navigation")
+page = st.sidebar.radio("Go to", ["Introduction", "Visualizations", "Predict Cost"])
 
-# === Page: Introduction ===
-if page == "🏠 Introduction":
+if page == "Introduction":
     st.title("🏥 Medical Insurance Cost Prediction")
-    col1, col2 = st.columns([2, 1])
+    st.write("This app predicts insurance cost using a machine learning model trained on synthetic or provided data.")
 
-    with col1:
-        st.markdown("""
-        ## Welcome!
+elif page == "Visualizations":
+    st.title("📊 Visual Explorations")
+    plot_type = st.selectbox("Choose a visualization:", [
+        "Distribution of Charges", "Charges by Gender", "Charges vs Age"
+    ])
 
-        This app uses machine learning to estimate medical insurance charges based on key factors.
-
-        ### 🔍 Features:
-        - Explore relationships between features like BMI, smoking, region, and insurance costs
-        - Predict charges based on user inputs
-        - Powered by Random Forest Regressor
-        """)
-
-    with col2:
-        st.info(f"📄 Records: {len(df):,}")
-        st.info(f"💲 Avg. Charge: ${df['charges'].mean():,.2f}")
-        st.info(f"💲 Max: ${df['charges'].max():,.2f}")
-        st.info(f"💲 Min: ${df['charges'].min():,.2f}")
-
-# Page 2: Visualizations
-elif page == "📊 Visualizations":
-    st.title("📊 Exploratory Data Analysis")
-
-    # Always work on a copy of the data to avoid persistent modifications
-    data = df.copy()
-
-    def show_distribution_of_charges():
-        fig, ax = plt.subplots(figsize=(10, 5))
-        sns.histplot(data['charges'], kde=True, bins=30, color='teal', ax=ax)
-        ax.set_title("Distribution of Charges")
-        return fig
-
-    def show_age_distribution():
-        fig, ax = plt.subplots(figsize=(10, 5))
-        sns.histplot(data['age'], kde=True, bins=30, color='skyblue', ax=ax)
-        ax.set_title("Age Distribution")
-        return fig
-
-    def show_bmi_distribution():
-        fig, ax = plt.subplots(figsize=(10, 5))
-        sns.histplot(data['bmi'], kde=True, bins=30, color='orchid', ax=ax)
-        ax.set_title("BMI Distribution")
-        return fig
-
-    def show_smoker_counts():
-        temp = data.copy()
-        temp['smoker_status'] = temp['smoker'].map({0: 'Non-Smoker', 1: 'Smoker'})
-        fig, ax = plt.subplots(figsize=(6, 5))
-        sns.countplot(x='smoker_status', data=temp, palette='Set2', ax=ax)
-        ax.set_title("Smoker vs Non-Smoker Count")
-        return fig
-
-    def show_region_counts():
-        temp = data.copy()
-        region_map = {0: 'Northeast', 1: 'Southeast', 2: 'Southwest', 3: 'Northwest'}
-        temp['region_label'] = temp['region'].map(region_map)
-        fig, ax = plt.subplots(figsize=(8, 5))
-        sns.countplot(x='region_label', data=temp, palette='pastel', ax=ax)
-        ax.set_title("Policyholders by Region")
-        return fig
-
-    def show_charge_age():
-        temp = data.copy()
-        temp['smoker_status'] = temp['smoker'].map({0: 'Non-Smoker', 1: 'Smoker'})
-        fig, ax = plt.subplots(figsize=(10, 6))
-        sns.scatterplot(x='age', y='charges', hue='smoker_status', data=temp, palette='Set1', ax=ax)
-        ax.set_title("Charges vs Age by Smoking Status")
-        return fig
-
-    def show_charge_bmi():
-        temp = data.copy()
-        temp['smoker_status'] = temp['smoker'].map({0: 'Non-Smoker', 1: 'Smoker'})
-        fig, ax = plt.subplots(figsize=(10, 6))
-        sns.scatterplot(x='bmi', y='charges', hue='smoker_status', data=temp, palette='Set1', ax=ax)
-        ax.set_title("Charges vs BMI by Smoking Status")
-        return fig
-
-    def show_gender_charges():
-        temp = data.copy()
-        temp['gender'] = temp['sex'].map({0: 'Female', 1: 'Male'})
-        fig, ax = plt.subplots(figsize=(8, 5))
-        sns.boxplot(x='gender', y='charges', data=temp, palette='pastel', ax=ax)
-        ax.set_title("Medical Charges by Gender", fontsize=14, fontweight='bold')
-        ax.set_xlabel("Gender", fontsize=12)
-        ax.set_ylabel("Charges ($)", fontsize=12)
-        ax.grid(True, axis='y', linestyle='--', alpha=0.5)
-        return fig
-
-
-    def show_children_charges():
-        fig, ax = plt.subplots(figsize=(8, 5))
-        avg_charges = data.groupby('children')['charges'].mean().reindex(range(0, 6), fill_value=0)
-        sns.barplot(x=avg_charges.index, y=avg_charges.values, palette='coolwarm', ax=ax)
-        ax.set_title("Average Charges by Number of Children")
-        return fig
-
-    def show_smoker_charges_box():
-        temp = data.copy()
-        temp['smoker_status'] = temp['smoker'].map({0: 'Non-Smoker', 1: 'Smoker'})
-        fig, ax = plt.subplots(figsize=(6, 5))
-        sns.boxplot(x='smoker_status', y='charges', data=temp, palette='Set2', ax=ax)
-        ax.set_title("Charges: Smoker vs Non-Smoker")
-        return fig
-
-    def show_correlation_matrix():
-        fig, ax = plt.subplots(figsize=(8, 6))
-        corr = data[['age', 'bmi', 'children', 'charges']].corr()
-        sns.heatmap(corr, annot=True, cmap='coolwarm', square=True, ax=ax)
-        ax.set_title("Feature Correlation Matrix")
-        return fig
-
-    # Visualization selector
-    visualizations = {
-        "📈 Distribution of Charges": show_distribution_of_charges,
-        "👥 Age Distribution": show_age_distribution,
-        "⚖️ BMI Distribution": show_bmi_distribution,
-        "🚭 Smoker Count": show_smoker_counts,
-        "🗺️ Region Count": show_region_counts,
-        "📊 Charges vs Age": show_charge_age,
-        "📉 Charges vs BMI": show_charge_bmi,
-        "👫 Charges by Gender": show_gender_charges,
-        "👶 Charges vs Number of Children": show_children_charges,
-        "💰 Charges: Smoker vs Non-Smoker": show_smoker_charges_box,
-        "🔗 Feature Correlation Matrix": show_correlation_matrix
-    }
-
-    # User selection
-    selected_viz = st.selectbox("📊 Choose a Visualization", list(visualizations.keys()))
-
-    # Show plot
-    try:
-        fig = visualizations[selected_viz]()
+    if plot_type == "Distribution of Charges":
+        fig, ax = plt.subplots()
+        sns.histplot(df['charges'], kde=True, ax=ax)
+        ax.set_title("Distribution of Insurance Charges")
         st.pyplot(fig)
-        plt.close(fig)
-    except Exception as e:
-        st.error(f"⚠️ Error showing plot: {e}")
 
-# === Page: Prediction ===
-elif page == "💰 Cost Prediction":
-    st.title("💰 Predict Insurance Charges")
+    elif plot_type == "Charges by Gender":
+        fig, ax = plt.subplots()
+        df['sex_label'] = df['sex'].map({0: 'Female', 1: 'Male'})
+        sns.boxplot(x='sex_label', y='charges', data=df, ax=ax)
+        ax.set_title("Charges by Gender")
+        st.pyplot(fig)
 
-    with st.form("input_form"):
-        col1, col2 = st.columns(2)
-        with col1:
-            age = st.slider("Age", 18, 100, 30)
-            bmi = st.slider("BMI", 10.0, 60.0, 25.0)
-            children = st.selectbox("Number of Children", list(range(0, 6)))
-        with col2:
-            sex = st.radio("Gender", ["Male", "Female"])
-            smoker = st.radio("Smoker", ["Yes", "No"])
-            region = st.selectbox("Region", ["Northeast", "Southeast", "Southwest", "Northwest"])
+    elif plot_type == "Charges vs Age":
+        fig, ax = plt.subplots()
+        sns.scatterplot(x='age', y='charges', hue=df['smoker'].map({0: 'Non-Smoker', 1: 'Smoker'}), data=df, ax=ax)
+        ax.set_title("Charges vs Age (Smoker Status)")
+        st.pyplot(fig)
 
-        submitted = st.form_submit_button("🔮 Predict")
+elif page == "Predict Cost":
+    st.title("💰 Predict Insurance Cost")
+    with st.form("predict_form"):
+        age = st.slider("Age", 18, 100, 30)
+        bmi = st.slider("BMI", 10.0, 60.0, 25.0)
+        children = st.slider("Children", 0, 5, 0)
+        sex = st.radio("Sex", ["Female", "Male"])
+        smoker = st.radio("Smoker", ["No", "Yes"])
+        region = st.selectbox("Region", ["Northeast", "Southeast", "Southwest", "Northwest"])
+        submit = st.form_submit_button("Predict")
 
-    if submitted:
-        input_df = pd.DataFrame({
-            'age': [age],
-            'bmi': [bmi],
-            'children': [children],
-            'sex': [1 if sex == "Male" else 0],
-            'smoker': [1 if smoker == "Yes" else 0],
-            'region': [ {"Northeast": 0, "Southeast": 1, "Southwest": 2, "Northwest": 3}[region] ]
-        })
-
-        try:
-            prediction = model.predict(input_df)[0]
-            st.success(f"💡 Estimated Insurance Cost: ${prediction:,.2f}")
-            st.subheader("📋 Summary")
-            st.table(input_df.rename(columns={
-                'age': 'Age', 'bmi': 'BMI', 'children': 'Children',
-                'sex': 'Gender (0=F,1=M)', 'smoker': 'Smoker (0=No,1=Yes)', 'region': 'Region (0–3)'
-            }))
-        except Exception as e:
-            st.error(f"Prediction error: {e}")
-            st.dataframe(input_df)
-
-# === Footer ===
-st.sidebar.markdown("---")
-st.sidebar.markdown("Developed with ❤️ using Streamlit & ML")
+    if submit:
+        sex = 1 if sex == "Male" else 0
+        smoker = 1 if smoker == "Yes" else 0
+        region_map = {"Northeast": 0, "Southeast": 1, "Southwest": 2, "Northwest": 3}
+        region = region_map[region]
+        input_data = pd.DataFrame([[age, bmi, children, sex, smoker, region]],
+                                  columns=['age', 'bmi', 'children', 'sex', 'smoker', 'region'])
+        prediction = model.predict(input_data)[0]
+        st.success(f"Predicted Insurance Charge: ${prediction:,.2f}")
