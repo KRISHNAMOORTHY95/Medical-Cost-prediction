@@ -188,11 +188,18 @@ elif page == "📊 Visualizations":
         return fig
 
     def show_smoker_non_smoker(df):
+    # Debug: Check data
+    print(f"DataFrame shape: {df.shape}")
+    print(f"Smoker column unique values: {df['smoker'].unique()}")
+    print(f"Smoker column value counts:\n{df['smoker'].value_counts()}")
+    
     fig, ax = plt.subplots(figsize=(10, 6))
     
     # Create labels and count
     labels = ['Non-Smoker', 'Smoker']
     counts = [sum(df['smoker'] == 0), sum(df['smoker'] == 1)]
+    
+    print(f"Counts: {counts}")
     
     # Create bar plot
     bars = ax.bar(labels, counts, color=['lightblue', 'orange'])
@@ -204,9 +211,12 @@ elif page == "📊 Visualizations":
     # Add count labels on bars
     for bar, count in zip(bars, counts):
         height = bar.get_height()
-        ax.text(bar.get_x() + bar.get_width()/2, height + 5,
-                str(count), ha='center', fontweight='bold')
+        if height > 0:  # Only add label if there's a bar
+            ax.text(bar.get_x() + bar.get_width()/2, height + max(counts)*0.01,
+                    str(count), ha='center', fontweight='bold')
     
+    plt.tight_layout()
+    plt.show()
     return fig
 
     def show_avg_bmi():
