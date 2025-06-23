@@ -201,23 +201,24 @@ elif page == "📊 Visualizations":
     smoker_charges = df[df['smoker'] == 1]['charges']
     non_smoker_charges = df[df['smoker'] == 0]['charges']
     
-       ax2.hist(non_smoker_charges, bins=30, alpha=0.7, label='Non-Smoker', color='lightblue')
-       ax2.hist(smoker_charges, bins=30, alpha=0.7, label='Smoker', color='orange')
-       ax2.set_title('Distribution of Medical Charges', fontweight='bold')
-       ax2.set_xlabel('Medical Charges ($)')
-       ax2.set_ylabel('Frequency')
-       ax2.legend()
+    ax2.hist(non_smoker_charges, bins=30, alpha=0.7, label='Non-Smoker', color='lightblue')
+    ax2.hist(smoker_charges, bins=30, alpha=0.7, label='Smoker', color='orange')
+    ax2.set_title('Distribution of Medical Charges', fontweight='bold')
+    ax2.set_xlabel('Medical Charges ($)')
+    ax2.set_ylabel('Frequency')
+    ax2.legend()
     
-       plt.tight_layout()
-       plt.show()
+    plt.tight_layout()
+    plt.show()
     
     # Print summary statistics
-        print("Summary Statistics:")
-        print(f"Non-Smokers - Mean: ${non_smoker_charges.mean():.2f}, Median: ${non_smoker_charges.median():.2f}")
-        print(f"Smokers - Mean: ${smoker_charges.mean():.2f}, Median: ${smoker_charges.median():.2f}")
-        print(f"Difference in means: ${smoker_charges.mean() - non_smoker_charges.mean():.2f}")
+    print("Summary Statistics:")
+    print(f"Non-Smokers - Mean: ${non_smoker_charges.mean():.2f}, Median: ${non_smoker_charges.median():.2f}")
+    print(f"Smokers - Mean: ${smoker_charges.mean():.2f}, Median: ${smoker_charges.median():.2f}")
+    print(f"Difference in means: ${smoker_charges.mean() - non_smoker_charges.mean():.2f}")
     
-        return fig
+    return fig
+       
     def show_avg_bmi():
         fig, ax = plt.subplots(figsize=(12, 6))
         average_bmi = df['bmi'].mean()
