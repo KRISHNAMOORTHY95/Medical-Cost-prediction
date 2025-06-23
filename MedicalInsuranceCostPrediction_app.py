@@ -16,51 +16,56 @@ st.set_page_config(
     layout="wide"
 )
 
+# Function to create sample data
+def create_sample_data():
+    np.random.seed(42)
+    n_samples = 1000
+
+    ages = np.random.randint(18, 65, n_samples)
+    bmis = np.random.normal(28, 6, n_samples)
+    bmis = np.clip(bmis, 15, 50)
+    children = np.random.randint(0, 6, n_samples)
+    smokers = np.random.choice([0, 1], n_samples, p=[0.8, 0.2])
+    sexes = np.random.choice([0, 1], n_samples)
+    regions = np.random.choice([0, 1, 2, 3], n_samples)
+
+    # Create charges with realistic relationships
+    charges = (
+        ages * 200 +
+        bmis * 100 +
+        children * 500 +
+        smokers * 15000 +
+        sexes * 200 +
+        regions * 300 +
+        np.random.normal(0, 2000, n_samples)
+    )
+    charges = np.clip(charges, 1000, 50000)
+
+    df = pd.DataFrame({
+        'age': ages,
+        'bmi': bmis,
+        'children': children,
+        'sex': sexes,
+        'smoker': smokers,
+        'region': regions,
+        'charges': charges
+    })
+    
+    return df
+
 # Function to create and train model if not exists
 @st.cache_data
 def load_or_create_model():
     try:
         # Try to load existing model
-        # Ensure the model file path is correct if you trained elsewhere
-        # This assumes 'model.pkl' was saved in the current directory
         with open('model.pkl', 'rb') as f:
             model = pickle.load(f)
         return model
     except FileNotFoundError:
         st.warning("Model file not found. Creating a new model with sample data.")
-        # Create sample data for demonstration if model is not found
-        np.random.seed(42)
-        n_samples = 1000
-
-        ages = np.random.randint(18, 65, n_samples)
-        bmis = np.random.normal(28, 6, n_samples)
-        bmis = np.clip(bmis, 15, 50)
-        children = np.random.randint(0, 6, n_samples)
-        smokers = np.random.choice([0, 1], n_samples, p=[0.8, 0.2])
-        sexes = np.random.choice([0, 1], n_samples)
-        regions = np.random.choice([0, 1, 2, 3], n_samples)
-
-        # Create charges with realistic relationships
-        charges = (
-            ages * 200 +
-            bmis * 100 +
-            children * 500 +
-            smokers * 15000 +
-            sexes * 200 +
-            regions * 300 +
-            np.random.normal(0, 2000, n_samples)
-        )
-        charges = np.clip(charges, 1000, 50000)
-
-        sample_df = pd.DataFrame({
-            'age': ages,
-            'bmi': bmis,
-            'children': children,
-            'sex': sexes,
-            'smoker': smokers,
-            'region': regions,
-            'charges': charges
-        })
+        
+        # Create sample data
+        sample_df = create_sample_data()
 
         # Train model
         X = sample_df[['age', 'bmi', 'children', 'sex', 'smoker', 'region']]
@@ -69,9 +74,12 @@ def load_or_create_model():
         model = RandomForestRegressor(n_estimators=100, random_state=42)
         model.fit(X, y)
 
-        # Save model
-        with open('model.pkl', 'wb') as f:
-            pickle.dump(model, f)
+        # Try to save model (optional, may fail in some environments)
+        try:
+            with open('model.pkl', 'wb') as f:
+                pickle.dump(model, f)
+        except:
+            pass  # Ignore save errors
 
         return model
 
@@ -80,46 +88,11 @@ def load_or_create_model():
 def load_or_create_dataset():
     try:
         # Try to load existing dataset
-        # Ensure the data file path is correct
         df = pd.read_csv("medical_insurance.csv")
         return df
     except FileNotFoundError:
         st.warning("Dataset file not found. Creating sample data for demonstration.")
-        # Create sample data
-        np.random.seed(42)
-        n_samples = 1000
-
-        ages = np.random.randint(18, 65, n_samples)
-        bmis = np.random.normal(28, 6, n_samples)
-        bmis = np.clip(bmis, 15, 50)
-        children = np.random.randint(0, 6, n_samples)
-        smokers = np.random.choice([0, 1], n_samples, p=[0.8, 0.2])
-        sexes = np.random.choice([0, 1], n_samples)
-        regions = np.random.choice([0, 1, 2, 3], n_samples)
-
-        # Create charges with realistic relationships
-        charges = (
-            ages * 200 +
-            bmis * 100 +
-            children * 500 +
-            smokers * 15000 +
-            sexes * 200 +
-            regions * 300 +
-            np.random.normal(0, 2000, n_samples)
-        )
-        charges = np.clip(charges, 1000, 50000)
-
-        df = pd.DataFrame({
-            'age': ages,
-            'bmi': bmis,
-            'children': children,
-            'sex': sexes,
-            'smoker': smokers,
-            'region': regions,
-            'charges': charges
-        })
-
-        return df
+        return create_sample_data()
 
 # Load model and data
 model = load_or_create_model()
@@ -179,6 +152,7 @@ elif page == "📊 Visualizations":
         ax.set_xlabel('Charges ($)', fontsize=12)
         ax.set_ylabel('Frequency', fontsize=12)
         ax.grid(True, alpha=0.3)
+        plt.tight_layout()
         return fig
 
     def show_age_distribution():
@@ -188,18 +162,26 @@ elif page == "📊 Visualizations":
         ax.set_xlabel('Age', fontsize=12)
         ax.set_ylabel('Frequency', fontsize=12)
         ax.grid(True, alpha=0.3)
+        plt.tight_layout()
         return fig
 
-    def show_smoker_non_smoker_count(): # Renamed to avoid conflict and clarify
+    def show_smoker_non_smoker_count():
         fig, ax = plt.subplots(figsize=(8, 6))
-        df['smoker_label'] = df['smoker'].map({0: 'Non-Smoker', 1: 'Smoker'})
-        smoker_counts = df['smoker_label'].value_counts().reindex(['Non-Smoker', 'Smoker'], fill_value=0)
-        sns.countplot(x='smoker_label', data=df, palette='Set2', order=['Non-Smoker', 'Smoker'], ax=ax)
+        smoker_labels = df['smoker'].map({0: 'Non-Smoker', 1: 'Smoker'})
+        smoker_counts = smoker_labels.value_counts().reindex(['Non-Smoker', 'Smoker'], fill_value=0)
+        
+        # Use bar plot instead of countplot for better control
+        ax.bar(smoker_counts.index, smoker_counts.values, color=['lightblue', 'salmon'], alpha=0.8)
         ax.set_title('Count of Smokers vs Non-Smokers', fontsize=16, fontweight='bold')
         ax.set_xlabel('Smoking Status', fontsize=12)
         ax.set_ylabel('Number of Individuals', fontsize=12)
+        
+        # Add value labels on bars
+        for i, v in enumerate(smoker_counts.values):
+            ax.text(i, v + 10, str(v), ha='center', va='bottom')
+        
+        plt.tight_layout()
         return fig
-
 
     def show_avg_bmi():
         fig, ax = plt.subplots(figsize=(12, 6))
@@ -212,18 +194,15 @@ elif page == "📊 Visualizations":
         ax.set_ylabel('Frequency', fontsize=12)
         ax.legend()
         ax.grid(True, alpha=0.3)
+        plt.tight_layout()
         return fig
 
-    # Corrected indentation for show_no_of_policyholders
     def show_no_of_policyholders():
         fig, ax = plt.subplots(figsize=(10, 6))
 
         region_map = {0: 'Northeast', 1: 'Southeast', 2: 'Southwest', 3: 'Northwest'}
-        # Create a temporary column for plotting if 'region_name' isn't always in df
-        temp_df = df.copy()
-        temp_df['region_name'] = temp_df['region'].map(region_map)
-
-        region_counts = temp_df['region_name'].value_counts().reindex(region_map.values(), fill_value=0)
+        region_labels = df['region'].map(region_map)
+        region_counts = region_labels.value_counts().reindex(region_map.values(), fill_value=0)
         colors = ['#1f77b4', '#ff7f0e', '#2ca02c', '#d62728']
 
         bars = ax.bar(region_counts.index, region_counts.values, color=colors, alpha=0.8)
@@ -235,65 +214,96 @@ elif page == "📊 Visualizations":
         for bar, count in zip(bars, region_counts.values):
             ax.text(bar.get_x() + bar.get_width()/2, bar.get_height() + 5,
                     str(count), ha='center', va='bottom')
+        plt.tight_layout()
         return fig
-
 
     def show_charge_age():
         fig, ax = plt.subplots(figsize=(12, 8))
         smoker_labels = df['smoker'].map({0: 'Non-Smoker', 1: 'Smoker'})
-        sns.scatterplot(x='age', y='charges', hue=smoker_labels, data=df.assign(smoker=smoker_labels),
-                       alpha=0.6, palette='Set1', s=60, ax=ax)
+        
+        # Create scatter plot manually for better control
+        non_smokers = df[df['smoker'] == 0]
+        smokers = df[df['smoker'] == 1]
+        
+        ax.scatter(non_smokers['age'], non_smokers['charges'], alpha=0.6, 
+                  label='Non-Smoker', color='blue', s=60)
+        ax.scatter(smokers['age'], smokers['charges'], alpha=0.6, 
+                  label='Smoker', color='red', s=60)
+        
         ax.set_title('Charges vs. Age (Colored by Smoker Status)', fontsize=16, fontweight='bold')
         ax.set_xlabel('Age', fontsize=12)
         ax.set_ylabel('Charges ($)', fontsize=12)
         ax.legend(title='Smoking Status')
         ax.grid(True, alpha=0.3)
+        plt.tight_layout()
         return fig
 
-    # Corrected indentation for show_smoker_non_smoker_charges
-    def show_charges_smokervsnon(): # Renamed to be distinct from count and match dictionary key
-       fig, ax = plt.subplots(figsize=(8, 6))
-
-       df['smoker_label'] = df['smoker'].map({0: 'Non-Smoker', 1: 'Smoker'})
-       sns.boxplot(x='smoker_label', y='charges', data=df, palette='Set2',
-                   order=['Non-Smoker', 'Smoker'], ax=ax)
-       ax.set_title('Medical Charges: Smokers vs Non-Smokers', fontsize=16, fontweight='bold')
-       ax.set_xlabel('Smoking Status', fontsize=12)
-       ax.set_ylabel('Charges ($)', fontsize=12)
-       ax.grid(True, alpha=0.3, axis='y')
-       return fig
-
+    def show_charges_smokervsnon():
+        fig, ax = plt.subplots(figsize=(8, 6))
+        
+        # Create box plot data manually
+        non_smoker_charges = df[df['smoker'] == 0]['charges']
+        smoker_charges = df[df['smoker'] == 1]['charges']
+        
+        box_data = [non_smoker_charges, smoker_charges]
+        box_labels = ['Non-Smoker', 'Smoker']
+        
+        ax.boxplot(box_data, labels=box_labels, patch_artist=True,
+                  boxprops=dict(facecolor='lightblue', alpha=0.7),
+                  medianprops=dict(color='red', linewidth=2))
+        
+        ax.set_title('Medical Charges: Smokers vs Non-Smokers', fontsize=16, fontweight='bold')
+        ax.set_xlabel('Smoking Status', fontsize=12)
+        ax.set_ylabel('Charges ($)', fontsize=12)
+        ax.grid(True, alpha=0.3, axis='y')
+        plt.tight_layout()
+        return fig
 
     def show_bmi_charge():
         fig, ax = plt.subplots(figsize=(12, 8))
-        smoker_labels = df['smoker'].map({0: 'Non-Smoker', 1: 'Smoker'})
-        sns.scatterplot(x='bmi', y='charges', hue=smoker_labels, data=df.assign(smoker=smoker_labels),
-                       alpha=0.6, palette='Set1', s=60, ax=ax)
+        
+        # Create scatter plot manually
+        non_smokers = df[df['smoker'] == 0]
+        smokers = df[df['smoker'] == 1]
+        
+        ax.scatter(non_smokers['bmi'], non_smokers['charges'], alpha=0.6, 
+                  label='Non-Smoker', color='blue', s=60)
+        ax.scatter(smokers['bmi'], smokers['charges'], alpha=0.6, 
+                  label='Smoker', color='red', s=60)
+        
         ax.set_title('Charges vs. BMI (Colored by Smoker Status)', fontsize=16, fontweight='bold')
         ax.set_xlabel('BMI', fontsize=12)
         ax.set_ylabel('Charges ($)', fontsize=12)
         ax.legend(title='Smoking Status')
         ax.grid(True, alpha=0.3)
+        plt.tight_layout()
         return fig
 
     def show_men_women_charge():
         fig, ax = plt.subplots(figsize=(10, 6))
-
-        df['sex_label'] = df['sex'].map({0: 'Female', 1: 'Male'})
-        sns.boxplot(x='sex_label', y='charges', data=df, palette='pastel',
-                order=['Female', 'Male'], ax=ax)
+        
+        # Create box plot data manually
+        female_charges = df[df['sex'] == 0]['charges']
+        male_charges = df[df['sex'] == 1]['charges']
+        
+        box_data = [female_charges, male_charges]
+        box_labels = ['Female', 'Male']
+        
+        ax.boxplot(box_data, labels=box_labels, patch_artist=True,
+                  boxprops=dict(facecolor='lightpink', alpha=0.7),
+                  medianprops=dict(color='red', linewidth=2))
 
         ax.set_title('Medical Charges: Male vs Female', fontsize=16, fontweight='bold')
         ax.set_xlabel('Gender', fontsize=12)
         ax.set_ylabel('Charges ($)', fontsize=12)
         ax.grid(True, alpha=0.3, axis='y')
+        plt.tight_layout()
         return fig
 
-    # Corrected indentation for show_correlation_children_charge
     def show_correlation_children_charge():
         fig, ax = plt.subplots(figsize=(10, 6))
 
-        children_avg = df.groupby('children')['charges'].mean().reindex(range(0, 6), fill_value=0)
+        children_avg = df.groupby('children')['charges'].mean()
         colors = plt.cm.viridis(np.linspace(0, 1, len(children_avg)))
 
         bars = ax.bar(children_avg.index, children_avg.values, color=colors, alpha=0.8)
@@ -305,8 +315,8 @@ elif page == "📊 Visualizations":
         for bar, avg_charge in zip(bars, children_avg.values):
             ax.text(bar.get_x() + bar.get_width()/2, bar.get_height() + 100,
                     f'${avg_charge:,.0f}', ha='center', va='bottom')
+        plt.tight_layout()
         return fig
-
 
     def show_numeric_features():
         fig, ax = plt.subplots(figsize=(8, 6))
@@ -315,18 +325,18 @@ elif page == "📊 Visualizations":
         sns.heatmap(corr_matrix, annot=True, cmap='coolwarm', fmt=".2f",
                    linewidths=0.5, square=True, cbar_kws={'shrink': 0.8}, ax=ax)
         ax.set_title('Correlation Between Numeric Features', fontsize=16, fontweight='bold')
+        plt.tight_layout()
         return fig
 
     # Questions dictionary
-    # Corrected function name reference for "💰 Charges: Smokers vs Non-Smokers"
     questions = {
         "📈 Distribution of Charges": show_distribution_of_charges,
         "👥 Age Distribution": show_age_distribution,
-        "🚭 Smokers vs Non-Smokers (Count)": show_smoker_non_smoker_count, # Updated name
+        "🚭 Smokers vs Non-Smokers (Count)": show_smoker_non_smoker_count,
         "⚖️ BMI Distribution": show_avg_bmi,
         "🗺️ Policyholders by Region": show_no_of_policyholders,
         "📊 Charges vs Age": show_charge_age,
-        "💰 Charges: Smokers vs Non-Smokers": show_charges_smokervsnon, # Corrected reference
+        "💰 Charges: Smokers vs Non-Smokers": show_charges_smokervsnon,
         "📉 Charges vs BMI": show_bmi_charge,
         "👫 Charges by Gender": show_men_women_charge,
         "👶 Charges vs Number of Children": show_correlation_children_charge,
@@ -344,7 +354,7 @@ elif page == "📊 Visualizations":
         try:
             fig = questions[selected_question]()
             st.pyplot(fig)
-            plt.close(fig)
+            plt.close(fig)  # Close figure to free memory
         except Exception as e:
             st.error(f"Error creating visualization: {str(e)}")
 
@@ -410,8 +420,6 @@ elif page == "💰 Cost Prediction":
 
             # Make prediction
             try:
-                # Ensure the model is loaded before prediction
-                # The @st.cache_data decorator handles loading
                 prediction = model.predict(input_data)[0]
 
                 # Display prediction
