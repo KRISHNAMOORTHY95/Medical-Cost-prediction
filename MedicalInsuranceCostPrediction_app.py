@@ -273,8 +273,9 @@ elif page == "📊 Visualizations":
         # Create a temporary copy to avoid modifying the cached dataframe directly
         temp_df = df.copy()
         temp_df['smoker_label'] = temp_df['smoker'].map({0: 'Non-Smoker', 1: 'Smoker'})
+        # Explicitly pass an empty dictionary for boxprops to prevent potential errors
         sns.boxplot(x='smoker_label', y='charges', data=temp_df, palette='Set2',
-                                order=['Non-Smoker', 'Smoker'], ax=ax)
+                                order=['Non-Smoker', 'Smoker'], ax=ax, boxprops={})
         ax.set_title('Medical Charges: Smokers vs Non-Smokers', fontsize=16, fontweight='bold')
         ax.set_xlabel('Smoking Status', fontsize=12)
         ax.set_ylabel('Charges ($)', fontsize=12)
@@ -302,8 +303,9 @@ elif page == "📊 Visualizations":
         # Create a temporary copy to avoid modifying the cached dataframe directly
         temp_df = df.copy()
         temp_df['sex_label'] = temp_df['sex'].map({0: 'Female', 1: 'Male'})
+        # Explicitly pass an empty dictionary for boxprops to prevent potential errors
         sns.boxplot(x='sex_label', y='charges', data=temp_df, palette='pastel',
-                                order=['Female', 'Male'], ax=ax)
+                                order=['Female', 'Male'], ax=ax, boxprops={})
 
         ax.set_title('Medical Charges: Male vs Female', fontsize=16, fontweight='bold')
         ax.set_xlabel('Gender', fontsize=12)
