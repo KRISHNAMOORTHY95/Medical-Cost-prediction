@@ -7,7 +7,6 @@ import numpy as np
 import joblib
 import seaborn as sns
 import matplotlib.pyplot as plt
-from scripts.preprocess import load_and_preprocess
 
 st.set_page_config(page_title="Medical Insurance Cost Prediction", layout="wide")
 
