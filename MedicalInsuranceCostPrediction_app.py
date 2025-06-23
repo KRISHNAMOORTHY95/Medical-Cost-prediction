@@ -151,26 +151,25 @@ elif page == "📊 Visualizations":
     st.title("📊 Exploratory Data Analysis")
 
     # Streamlit native charts (most reliable)
-    def show_distribution_charges_native():
-        st.subheader("📈 Distribution of Medical Insurance Charges")
-        st.histogram_chart(df['charges'], bins=30)
-        
-    def show_age_distribution_native():
-        st.subheader("👥 Age Distribution")
-        st.histogram_chart(df['age'], bins=20)
+    def show_distribution_of_charges():
+        fig, ax = plt.subplots(figsize=(12, 6))
+        sns.histplot(df['charges'], kde=True, bins=30, color='teal', alpha=0.7, ax=ax)
+        ax.set_title('Distribution of Medical Insurance Charges', fontsize=16, fontweight='bold')
+        ax.set_xlabel('Charges ($)', fontsize=12)
+        ax.set_ylabel('Frequency', fontsize=12)
+        ax.grid(True, alpha=0.3)
+        plt.tight_layout()
+        return fig
 
-    # Matplotlib-based visualizations with proper error handling
-    def create_matplotlib_chart(chart_func, title):
-        try:
-            fig, ax = plt.subplots(figsize=(10, 6))
-            chart_func(ax)
-            st.pyplot(fig, clear_figure=True)
-            plt.close(fig)
-        except Exception as e:
-            st.error(f"Error creating {title}: {str(e)}")
-            # Fallback to basic chart
-            st.write(f"Unable to create {title}. Here's the raw data:")
-            st.dataframe(df.head())
+    def show_age_distribution():
+        fig, ax = plt.subplots(figsize=(12, 6))
+        sns.histplot(df['age'], kde=True, bins=20, color='skyblue', alpha=0.7, ax=ax)
+        ax.set_title('Distribution of Age', fontsize=16, fontweight='bold')
+        ax.set_xlabel('Age', fontsize=12)
+        ax.set_ylabel('Frequency', fontsize=12)
+        ax.grid(True, alpha=0.3)
+        plt.tight_layout()
+        return fig
 
     def smoker_count_chart(ax):
         smoker_counts = df['smoker'].value_counts()
