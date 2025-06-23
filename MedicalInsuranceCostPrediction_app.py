@@ -110,78 +110,145 @@ if page == "🏠 Introduction":
         st.info(f"💲 Max: ${df['charges'].max():,.2f}")
         st.info(f"💲 Min: ${df['charges'].min():,.2f}")
 
-# === Page: Visualizations ===
+# Visualizations
 elif page == "📊 Visualizations":
-    st.title("📊 Exploratory Visualizations")
+    st.title("📊 Exploratory Data Analysis")
 
-    # --- Visualization Functions ---
-    def plot_distribution(column, color='skyblue'):
+    def plot_distribution_of_charges():
         fig, ax = plt.subplots(figsize=(10, 5))
-        sns.histplot(df[column], kde=True, color=color, ax=ax)
-        ax.set_title(f'Distribution of {column}', fontsize=14)
-        ax.set_xlabel(column)
+        sns.histplot(df['charges'], kde=True, bins=30, color='teal', ax=ax)
+        ax.set_title("Distribution of Charges")
+        ax.set_xlabel("Charges")
+        ax.set_ylabel("Frequency")
         plt.tight_layout()
         return fig
 
-    def plot_boxplot(col, title, label_map):
-        temp_df = df.copy()
-        temp_df['label'] = temp_df[col].map(label_map)
+    def plot_age_distribution():
+        fig, ax = plt.subplots(figsize=(10, 5))
+        sns.histplot(df['age'], kde=True, bins=30, color='skyblue', ax=ax)
+        ax.set_title("Age Distribution")
+        ax.set_xlabel("Age")
+        ax.set_ylabel("Frequency")
+        plt.tight_layout()
+        return fig
+
+    def plot_bmi_distribution():
+        fig, ax = plt.subplots(figsize=(10, 5))
+        sns.histplot(df['bmi'], kde=True, bins=30, color='orchid', ax=ax)
+        ax.set_title("BMI Distribution")
+        ax.set_xlabel("BMI")
+        ax.set_ylabel("Frequency")
+        plt.tight_layout()
+        return fig
+
+    def plot_smoker_counts():
+        temp = df.copy()
+        temp['smoker_status'] = temp['smoker'].map({0: 'Non-Smoker', 1: 'Smoker'})
+        fig, ax = plt.subplots(figsize=(6, 5))
+        sns.countplot(x='smoker_status', data=temp, palette='Set2', ax=ax)
+        ax.set_title("Smoker vs Non-Smoker Count")
+        ax.set_xlabel("Smoker Status")
+        ax.set_ylabel("Count")
+        plt.tight_layout()
+        return fig
+
+    def plot_region_counts():
+        region_map = {0: 'Northeast', 1: 'Southeast', 2: 'Southwest', 3: 'Northwest'}
+        temp = df.copy()
+        temp['region_label'] = temp['region'].map(region_map)
         fig, ax = plt.subplots(figsize=(8, 5))
-        sns.boxplot(x='label', y='charges', data=temp_df, palette='Set2', ax=ax)
-        ax.set_title(title, fontsize=14)
+        sns.countplot(x='region_label', data=temp, palette='pastel', ax=ax)
+        ax.set_title("Policyholders by Region")
+        ax.set_xlabel("Region")
+        ax.set_ylabel("Count")
         plt.tight_layout()
         return fig
 
-    def plot_scatter(x, hue, title, hue_map):
-        temp_df = df.copy()
-        temp_df['hue_label'] = temp_df[hue].map(hue_map)
+    def plot_charges_vs_age():
+        temp = df.copy()
+        temp['smoker_status'] = temp['smoker'].map({0: 'Non-Smoker', 1: 'Smoker'})
         fig, ax = plt.subplots(figsize=(10, 6))
-        sns.scatterplot(x=temp_df[x], y=temp_df['charges'], hue=temp_df['hue_label'],
-                        palette='Set1', alpha=0.6, s=70, ax=ax)
-        ax.set_title(title, fontsize=14)
+        sns.scatterplot(x='age', y='charges', hue='smoker_status', data=temp, palette='Set1', ax=ax)
+        ax.set_title("Charges vs Age by Smoking Status")
+        ax.set_xlabel("Age")
+        ax.set_ylabel("Charges")
         plt.tight_layout()
         return fig
 
-    def plot_bar_count(col, label_map, title):
-        temp_df = df.copy()
-        temp_df['label'] = temp_df[col].map(label_map)
+    def plot_charges_vs_bmi():
+        temp = df.copy()
+        temp['smoker_status'] = temp['smoker'].map({0: 'Non-Smoker', 1: 'Smoker'})
+        fig, ax = plt.subplots(figsize=(10, 6))
+        sns.scatterplot(x='bmi', y='charges', hue='smoker_status', data=temp, palette='Set1', ax=ax)
+        ax.set_title("Charges vs BMI by Smoking Status")
+        ax.set_xlabel("BMI")
+        ax.set_ylabel("Charges")
+        plt.tight_layout()
+        return fig
+
+    def plot_charges_by_gender():
+        temp = df.copy()
+        temp['gender'] = temp['sex'].map({0: 'Female', 1: 'Male'})
+        fig, ax = plt.subplots(figsize=(6, 5))
+        sns.boxplot(x='gender', y='charges', data=temp, palette='pastel', ax=ax)
+        ax.set_title("Charges by Gender")
+        ax.set_xlabel("Gender")
+        ax.set_ylabel("Charges")
+        plt.tight_layout()
+        return fig
+
+    def plot_charges_by_children():
         fig, ax = plt.subplots(figsize=(8, 5))
-        sns.countplot(x='label', data=temp_df, palette='pastel', ax=ax)
-        ax.set_title(title, fontsize=14)
+        children_avg = df.groupby('children')['charges'].mean()
+        sns.barplot(x=children_avg.index, y=children_avg.values, palette='coolwarm', ax=ax)
+        ax.set_title("Average Charges by Number of Children")
+        ax.set_xlabel("Number of Children")
+        ax.set_ylabel("Average Charges")
         plt.tight_layout()
         return fig
 
-    def plot_correlation():
+    def plot_smoker_charge_box():
+        temp = df.copy()
+        temp['smoker_status'] = temp['smoker'].map({0: 'Non-Smoker', 1: 'Smoker'})
+        fig, ax = plt.subplots(figsize=(6, 5))
+        sns.boxplot(x='smoker_status', y='charges', data=temp, palette='Set2', ax=ax)
+        ax.set_title("Charges: Smoker vs Non-Smoker")
+        ax.set_xlabel("Smoking Status")
+        ax.set_ylabel("Charges")
+        plt.tight_layout()
+        return fig
+
+    def plot_correlation_matrix():
         fig, ax = plt.subplots(figsize=(8, 6))
         corr = df[['age', 'bmi', 'children', 'charges']].corr()
         sns.heatmap(corr, annot=True, cmap='coolwarm', square=True, ax=ax)
-        ax.set_title("Correlation Matrix", fontsize=14)
+        ax.set_title("Correlation Matrix")
         plt.tight_layout()
         return fig
 
-    # --- Dropdown options ---
-    visual_options = {
-        "📈 Distribution of Charges": lambda: plot_distribution('charges', 'teal'),
-        "👥 Age Distribution": lambda: plot_distribution('age', 'lightblue'),
-        "⚖️ BMI Distribution": lambda: plot_distribution('bmi', 'orchid'),
-        "🚭 Smoker Count": lambda: plot_bar_count('smoker', {0: 'Non-Smoker', 1: 'Smoker'}, 'Smoker vs Non-Smoker'),
-        "🧍 Gender Charges": lambda: plot_boxplot('sex', 'Gender-wise Charges', {0: 'Female', 1: 'Male'}),
-        "💨 Smoker Charges": lambda: plot_boxplot('smoker', 'Smoker-wise Charges', {0: 'Non-Smoker', 1: 'Smoker'}),
-        "🗺️ Policyholders by Region": lambda: plot_bar_count('region', {0: 'Northeast', 1: 'Southeast', 2: 'Southwest', 3: 'Northwest'}, 'Policyholders by Region'),
-        "💰 Charges vs BMI": lambda: plot_scatter('bmi', 'smoker', 'Charges vs BMI (Smoker-wise)', {0: 'Non-Smoker', 1: 'Smoker'}),
-        "💰 Charges vs Age": lambda: plot_scatter('age', 'smoker', 'Charges vs Age (Smoker-wise)', {0: 'Non-Smoker', 1: 'Smoker'}),
-        "🔗 Feature Correlation": plot_correlation
+    # Dropdown for visualization selection
+    visual_dict = {
+        "📈 Distribution of Charges": plot_distribution_of_charges,
+        "👥 Age Distribution": plot_age_distribution,
+        "⚖️ BMI Distribution": plot_bmi_distribution,
+        "🚭 Smoker Count": plot_smoker_counts,
+        "🗺️ Region Count": plot_region_counts,
+        "📊 Charges vs Age": plot_charges_vs_age,
+        "📉 Charges vs BMI": plot_charges_vs_bmi,
+        "👫 Charges by Gender": plot_charges_by_gender,
+        "👶 Charges vs Number of Children": plot_charges_by_children,
+        "💰 Charges: Smoker vs Non-Smoker": plot_smoker_charge_box,
+        "🔗 Feature Correlation": plot_correlation_matrix
     }
 
-    selected_vis = st.selectbox("📊 Choose a Visualization", list(visual_options.keys()))
+    selected_plot = st.selectbox("🔍 Select a visualization", list(visual_dict.keys()))
 
     try:
-        fig = visual_options[selected_vis]()
+        fig = visual_dict[selected_plot]()
         st.pyplot(fig)
         plt.close(fig)
     except Exception as e:
-        st.error(f"Error rendering the plot: {e}")
-
+        st.error(f"❌ Error rendering plot: {e}")
 
 # === Page: Prediction ===
 elif page == "💰 Cost Prediction":
