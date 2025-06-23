@@ -310,7 +310,7 @@ elif page == "📊 Visualizations":
 
     # Visualization options
     viz_options = {
-        "📈 Distribution of Charges (Native)": show_distribution_charges_native,
+        "📈 Distribution of Charges (Native)": show_distribution_of_charges,
         "👥 Age Distribution (Native)": show_age_distribution_native,
         "🚭 Smokers vs Non-Smokers Count": lambda: create_matplotlib_chart(smoker_count_chart, "Smoker Count"),
         "⚖️ BMI Distribution": lambda: create_matplotlib_chart(bmi_distribution_chart, "BMI Distribution"),
