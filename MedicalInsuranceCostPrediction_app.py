@@ -187,38 +187,27 @@ elif page == "📊 Visualizations":
         ax.grid(True, alpha=0.3)
         return fig
 
-    def show_smoker_non_smoker():
-        fig, ax = plt.subplots(figsize=(10, 6))
-        
-        # Create smoker labels
-        df['smoker_label'] = df['smoker'].map({0: 'Non-Smoker', 1: 'Smoker'})
-        smoker_counts = df['smoker_label'].value_counts().reindex(['Non-Smoker', 'Smoker'], fill_value=0)
-        
-        # Create count plot
-        sns.countplot(x='smoker_label', data=df, palette='Set2', order=['Non-Smoker', 'Smoker'], ax=ax)
-        
-        # Styling
-        ax.set_title('Count of Smokers vs Non-Smokers', fontsize=16, fontweight='bold')
-        ax.set_xlabel('Smoking Status', fontsize=12)
-        ax.set_ylabel('Number of Individuals', fontsize=12)
-        ax.grid(True, alpha=0.3, axis='y')
-        
-        # Add value labels on bars
-        for i, bar in enumerate(ax.patches):
-            height = bar.get_height()
-            ax.text(bar.get_x() + bar.get_width()/2, height + 5,
-                   f'{int(height)}', ha='center', va='bottom', fontweight='bold')
-        
-        # Add percentage labels
-        total = len(df)
-        for i, bar in enumerate(ax.patches):
-            height = bar.get_height()
-            percentage = (height / total) * 100
-            ax.text(bar.get_x() + bar.get_width()/2, height/2,
-                   f'{percentage:.1f}%', ha='center', va='center', 
-                   fontweight='bold', color='white', fontsize=12)
-        
-        return fig
+    def show_smoker_non_smoker(df):
+    fig, ax = plt.subplots(figsize=(10, 6))
+    
+    # Create labels and count
+    labels = ['Non-Smoker', 'Smoker']
+    counts = [sum(df['smoker'] == 0), sum(df['smoker'] == 1)]
+    
+    # Create bar plot
+    bars = ax.bar(labels, counts, color=['lightblue', 'orange'])
+    
+    # Add titles and labels
+    ax.set_title('Smokers vs Non-Smokers', fontsize=16, fontweight='bold')
+    ax.set_ylabel('Count')
+    
+    # Add count labels on bars
+    for bar, count in zip(bars, counts):
+        height = bar.get_height()
+        ax.text(bar.get_x() + bar.get_width()/2, height + 5,
+                str(count), ha='center', fontweight='bold')
+    
+    return fig
 
     def show_avg_bmi():
         fig, ax = plt.subplots(figsize=(12, 6))
