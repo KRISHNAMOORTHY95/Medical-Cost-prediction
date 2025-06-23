@@ -187,46 +187,37 @@ elif page == "📊 Visualizations":
         ax.grid(True, alpha=0.3)
         return fig
 
-  def show_smoker_non_smoker(df):
-    # Check if 'smoker' column exists
-    if 'smoker' not in df.columns:
-        raise ValueError("DataFrame must contain a 'smoker' column.")
+   def show_smoker_non_smoker(df):
+     # Debug: Check data
+       print(f"DataFrame shape: {df.shape}")
+       print(f"Smoker column unique values: {df['smoker'].unique()}")
+       print(f"Smoker column value counts:\n{df['smoker'].value_counts()}")
 
-    # Debug info
-    print(f"DataFrame shape: {df.shape}")
-    print(f"Smoker column unique values: {df['smoker'].unique()}")
-    print(f"Smoker column value counts:\n{df['smoker'].value_counts()}")
+      fig, ax = plt.subplots(figsize=(10, 6))
 
-    # Normalize smoker values (string or binary)
-    smoker_series = df['smoker']
-    if smoker_series.dtype == 'object':
-        smoker_series = smoker_series.str.lower().map({'no': 0, 'yes': 1})
+    # Create labels and count
+       labels = ['Non-Smoker', 'Smoker']
+       counts = [sum(df['smoker'] == 0), sum(df['smoker'] == 1)]
 
-    # Count values
-    counts = [
-        sum(smoker_series == 0),
-        sum(smoker_series == 1)
-    ]
-    labels = ['Non-Smoker', 'Smoker']
+      print(f"Counts: {counts}")
 
-    print(f"Counts: {counts}")
+    # Create bar plot
+        bars = ax.bar(labels, counts, color=['lightblue', 'orange'])
 
-    # Plotting
-    fig, ax = plt.subplots(figsize=(10, 6))
-    bars = ax.bar(labels, counts, color=['lightblue', 'orange'])
-    ax.set_title('Smokers vs Non-Smokers', fontsize=16, fontweight='bold')
-    ax.set_ylabel('Count')
+    # Add titles and labels
+        ax.set_title('Smokers vs Non-Smokers', fontsize=16, fontweight='bold')
+        ax.set_ylabel('Count')
 
-    for bar, count in zip(bars, counts):
-        height = bar.get_height()
-        if height > 0:
-            ax.text(bar.get_x() + bar.get_width()/2, height + max(counts)*0.01,
+    # Add count labels on bars
+        for bar, count in zip(bars, counts):
+            height = bar.get_height()
+            if height > 0:  # Only add label if there's a bar
+               ax.text(bar.get_x() + bar.get_width()/2, height + max(counts)*0.01,
                     str(count), ha='center', fontweight='bold')
 
-    plt.tight_layout()
-    plt.show()
-    return fig
-
+        plt.tight_layout()
+        plt.show()
+        return fig
 
     def show_avg_bmi():
         fig, ax = plt.subplots(figsize=(12, 6))
