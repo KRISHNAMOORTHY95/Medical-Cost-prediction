@@ -8,10 +8,21 @@ import joblib
 import seaborn as sns
 import matplotlib.pyplot as plt
 
+# Streamlit page config
 st.set_page_config(page_title="Medical Insurance Cost Prediction", layout="wide")
 
 # Load the trained model
 model = joblib.load("models/best_model.pkl")
+
+# Load and preprocess dataset (you can customize this function as needed)
+@st.cache_data
+def load_and_preprocess():
+    df = pd.read_csv("data/medical_insurance.csv")
+    # Encode categorical columns for visualization (not for modeling)
+    df['sex'] = df['sex'].map({'male': 1, 'female': 0})
+    df['smoker'] = df['smoker'].map({'yes': 1, 'no': 0})
+    df['region'] = df['region'].map({'southwest': 0, 'southeast': 1, 'northwest': 2, 'northeast': 3})
+    return df
 
 st.title("💰 Medical Insurance Cost Estimator")
 
@@ -50,13 +61,12 @@ with tab2:
     smoker = st.selectbox("Do you Smoke?", ["yes", "no"])
     region = st.selectbox("Region", ["northeast", "northwest", "southeast", "southwest"])
 
-    # Encoding inputs
-    sex = 1 if sex == "male" else 0
-    smoker = 1 if smoker == "yes" else 0
-    region_dict = {"northeast": 3, "northwest": 2, "southeast": 1, "southwest": 0}
-    region = region_dict[region]
+    # Encode user inputs
+    sex_encoded = 1 if sex == "male" else 0
+    smoker_encoded = 1 if smoker == "yes" else 0
+    region_encoded = {"northeast": 3, "northwest": 2, "southeast": 1, "southwest": 0}[region]
 
-    input_data = pd.DataFrame([[age, sex, bmi, children, smoker, region]],
+    input_data = pd.DataFrame([[age, sex_encoded, bmi, children, smoker_encoded, region_encoded]],
                               columns=["age", "sex", "bmi", "children", "smoker", "region"])
 
     if st.button("Predict Insurance Cost"):
