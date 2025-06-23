@@ -187,38 +187,37 @@ elif page == "📊 Visualizations":
         ax.grid(True, alpha=0.3)
         return fig
 
-   def show_smoker_non_smoker(df):
-     # Debug: Check data
-       print(f"DataFrame shape: {df.shape}")
-       print(f"Smoker column unique values: {df['smoker'].unique()}")
-       print(f"Smoker column value counts:\n{df['smoker'].value_counts()}")
-
-      fig, ax = plt.subplots(figsize=(10, 6))
-
-    # Create labels and count
-       labels = ['Non-Smoker', 'Smoker']
-       counts = [sum(df['smoker'] == 0), sum(df['smoker'] == 1)]
-
-      print(f"Counts: {counts}")
-
-    # Create bar plot
-        bars = ax.bar(labels, counts, color=['lightblue', 'orange'])
-
-    # Add titles and labels
-        ax.set_title('Smokers vs Non-Smokers', fontsize=16, fontweight='bold')
-        ax.set_ylabel('Count')
-
-    # Add count labels on bars
-        for bar, count in zip(bars, counts):
-            height = bar.get_height()
-            if height > 0:  # Only add label if there's a bar
-               ax.text(bar.get_x() + bar.get_width()/2, height + max(counts)*0.01,
-                    str(count), ha='center', fontweight='bold')
-
-        plt.tight_layout()
-        plt.show()
+   def show_charges_smokervsnon(df):
+    # Create figure with subplots
+    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(15, 6))
+    
+    # Box plot
+    sns.boxplot(x='smoker', y='charges', data=df, palette='Set2', ax=ax1)
+    ax1.set_title('Medical Charges: Smokers vs Non-Smokers', fontweight='bold')
+    ax1.set_xlabel('Smoking Status (0=Non-Smoker, 1=Smoker)')
+    ax1.set_ylabel('Medical Charges ($)')
+    
+    # Histogram with separate distributions
+    smoker_charges = df[df['smoker'] == 1]['charges']
+    non_smoker_charges = df[df['smoker'] == 0]['charges']
+    
+       ax2.hist(non_smoker_charges, bins=30, alpha=0.7, label='Non-Smoker', color='lightblue')
+       ax2.hist(smoker_charges, bins=30, alpha=0.7, label='Smoker', color='orange')
+       ax2.set_title('Distribution of Medical Charges', fontweight='bold')
+       ax2.set_xlabel('Medical Charges ($)')
+       ax2.set_ylabel('Frequency')
+       ax2.legend()
+    
+       plt.tight_layout()
+       plt.show()
+    
+    # Print summary statistics
+        print("Summary Statistics:")
+        print(f"Non-Smokers - Mean: ${non_smoker_charges.mean():.2f}, Median: ${non_smoker_charges.median():.2f}")
+        print(f"Smokers - Mean: ${smoker_charges.mean():.2f}, Median: ${smoker_charges.median():.2f}")
+        print(f"Difference in means: ${smoker_charges.mean() - non_smoker_charges.mean():.2f}")
+    
         return fig
-
     def show_avg_bmi():
         fig, ax = plt.subplots(figsize=(12, 6))
         average_bmi = df['bmi'].mean()
