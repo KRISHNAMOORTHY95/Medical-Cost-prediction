@@ -234,10 +234,11 @@ elif page == "📊 Visualizations":
         fig, ax = plt.subplots(figsize=(10, 6))
 
         region_map = {0: 'Northeast', 1: 'Southeast', 2: 'Southwest', 3: 'Northwest'}
-        # Create a temporary column for plotting if 'region_name' isn't always in df
+        # Create a temporary copy to avoid modifying the cached dataframe directly
         temp_df = df.copy()
         temp_df['region_name'] = temp_df['region'].map(region_map)
 
+        # Ensure all region names are included in the reindex, even if counts are zero
         region_counts = temp_df['region_name'].value_counts().reindex(list(region_map.values()), fill_value=0)
         colors = ['#1f77b4', '#ff7f0e', '#2ca02c', '#d62728']
 
