@@ -187,7 +187,7 @@ elif page == "📊 Visualizations":
         ax.grid(True, alpha=0.3)
         return fig
 
-    def show_smoker_non_smoker(df):
+   def show_smoker_non_smoker(df):
     # Debug: Check data
     print(f"DataFrame shape: {df.shape}")
     print(f"Smoker column unique values: {df['smoker'].unique()}")
