@@ -171,10 +171,14 @@ elif page == "📊 Visualizations":
     def show_gender_charges():
         temp = data.copy()
         temp['gender'] = temp['sex'].map({0: 'Female', 1: 'Male'})
-        fig, ax = plt.subplots(figsize=(6, 5))
+        fig, ax = plt.subplots(figsize=(8, 5))
         sns.boxplot(x='gender', y='charges', data=temp, palette='pastel', ax=ax)
-        ax.set_title("Charges by Gender")
+        ax.set_title("Medical Charges by Gender", fontsize=14, fontweight='bold')
+        ax.set_xlabel("Gender", fontsize=12)
+        ax.set_ylabel("Charges ($)", fontsize=12)
+        ax.grid(True, axis='y', linestyle='--', alpha=0.5)
         return fig
+
 
     def show_children_charges():
         fig, ax = plt.subplots(figsize=(8, 5))
