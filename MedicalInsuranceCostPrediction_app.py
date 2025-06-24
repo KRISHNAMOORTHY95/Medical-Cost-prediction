@@ -312,6 +312,13 @@ elif page == "📊 Visualizations":
     viz_options = {
         "📈 Distribution of Charges (Native)": show_distribution_of_charges,
         "👥 Age Distribution (Native)": show_age_distribution_native,
+        def show_age_distribution_native():
+    """Display age distribution using native plotting"""
+    # Your plotting code here
+    # For example:
+    st.subheader("Age Distribution")
+    # Add your visualization logic
+    pass
         "🚭 Smokers vs Non-Smokers Count": lambda: create_matplotlib_chart(smoker_count_chart, "Smoker Count"),
         "⚖️ BMI Distribution": lambda: create_matplotlib_chart(bmi_distribution_chart, "BMI Distribution"),
         "🗺️ Policyholders by Region": lambda: create_matplotlib_chart(region_chart, "Region Chart"),
