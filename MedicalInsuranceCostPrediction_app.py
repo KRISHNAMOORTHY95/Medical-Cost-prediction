@@ -100,6 +100,15 @@ def load_or_create_dataset():
         st.warning("Dataset file not found. Creating sample data for demonstration.")
         return create_sample_data()
 
+# Helper function to create matplotlib charts
+def create_matplotlib_chart(chart_function, title):
+    """Helper function to create and display matplotlib charts"""
+    fig, ax = plt.subplots(figsize=(12, 6))
+    chart_function(ax)
+    plt.tight_layout()
+    st.pyplot(fig)
+    plt.close()
+
 # Load model and data
 model = load_or_create_model()
 df = load_or_create_dataset()
@@ -159,9 +168,11 @@ elif page == "📊 Visualizations":
         ax.set_ylabel('Frequency', fontsize=12)
         ax.grid(True, alpha=0.3)
         plt.tight_layout()
-        return fig
-
-    def show_age_distribution():
+        st.pyplot(fig)
+        plt.close()
+        
+    def show_age_distribution_native():
+        """Fixed function for age distribution using native plotting"""
         fig, ax = plt.subplots(figsize=(12, 6))
         sns.histplot(df['age'], kde=True, bins=20, color='skyblue', alpha=0.7, ax=ax)
         ax.set_title('Distribution of Age', fontsize=16, fontweight='bold')
@@ -169,7 +180,8 @@ elif page == "📊 Visualizations":
         ax.set_ylabel('Frequency', fontsize=12)
         ax.grid(True, alpha=0.3)
         plt.tight_layout()
-        return fig
+        st.pyplot(fig)
+        plt.close()
 
     def smoker_count_chart(ax):
         smoker_counts = df['smoker'].value_counts()
@@ -312,13 +324,6 @@ elif page == "📊 Visualizations":
     viz_options = {
         "📈 Distribution of Charges (Native)": show_distribution_of_charges,
         "👥 Age Distribution (Native)": show_age_distribution_native,
-        def show_age_distribution_native():
-    """Display age distribution using native plotting"""
-    # Your plotting code here
-    # For example:
-    st.subheader("Age Distribution")
-    # Add your visualization logic
-    pass
         "🚭 Smokers vs Non-Smokers Count": lambda: create_matplotlib_chart(smoker_count_chart, "Smoker Count"),
         "⚖️ BMI Distribution": lambda: create_matplotlib_chart(bmi_distribution_chart, "BMI Distribution"),
         "🗺️ Policyholders by Region": lambda: create_matplotlib_chart(region_chart, "Region Chart"),
