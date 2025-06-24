@@ -101,7 +101,7 @@ def load_or_create_dataset():
         return create_sample_data()
 
 # Helper function to create matplotlib charts
-def create_matplotlib_chart(chart_function, title):
+def create_matplotlib_chart(chart_function):
     """Helper function to create and display matplotlib charts"""
     fig, ax = plt.subplots(figsize=(12, 6))
     chart_function(ax)
@@ -324,15 +324,15 @@ elif page == "📊 Visualizations":
     viz_options = {
         "📈 Distribution of Charges (Native)": show_distribution_of_charges,
         "👥 Age Distribution (Native)": show_age_distribution_native,
-        "🚭 Smokers vs Non-Smokers Count": lambda: create_matplotlib_chart(smoker_count_chart, "Smoker Count"),
-        "⚖️ BMI Distribution": lambda: create_matplotlib_chart(bmi_distribution_chart, "BMI Distribution"),
-        "🗺️ Policyholders by Region": lambda: create_matplotlib_chart(region_chart, "Region Chart"),
-        "📊 Charges vs Age": lambda: create_matplotlib_chart(charges_vs_age_chart, "Charges vs Age"),
-        "💰 Smoker Charges Comparison": lambda: create_matplotlib_chart(smoker_charges_boxplot, "Smoker Charges"),
-        "📉 Charges vs BMI": lambda: create_matplotlib_chart(charges_vs_bmi_chart, "Charges vs BMI"),
-        "👫 Gender Charges Comparison": lambda: create_matplotlib_chart(gender_charges_chart, "Gender Charges"),
-        "👶 Children vs Charges": lambda: create_matplotlib_chart(children_charges_chart, "Children Charges"),
-        "🔗 Feature Correlations": lambda: create_matplotlib_chart(correlation_heatmap, "Correlations"),
+        "🚭 Smokers vs Non-Smokers Count": lambda: create_matplotlib_chart(smoker_count_chart),
+        "⚖️ BMI Distribution": lambda: create_matplotlib_chart(bmi_distribution_chart),
+        "🗺️ Policyholders by Region": lambda: create_matplotlib_chart(region_chart),
+        "📊 Charges vs Age": lambda: create_matplotlib_chart(charges_vs_age_chart),
+        "💰 Smoker Charges Comparison": lambda: create_matplotlib_chart(smoker_charges_boxplot),
+        "📉 Charges vs BMI": lambda: create_matplotlib_chart(charges_vs_bmi_chart),
+        "👫 Gender Charges Comparison": lambda: create_matplotlib_chart(gender_charges_chart),
+        "👶 Children vs Charges": lambda: create_matplotlib_chart(children_charges_chart),
+        "🔗 Feature Correlations": lambda: create_matplotlib_chart(correlation_heatmap),
     }
 
     # Visualization selector
