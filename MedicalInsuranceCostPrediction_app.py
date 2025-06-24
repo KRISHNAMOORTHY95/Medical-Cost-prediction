@@ -213,44 +213,75 @@ elif page == "📊 Visualizations":
         region_map = {0: 'Northeast', 1: 'Southeast', 2: 'Southwest', 3: 'Northwest'}
         region_counts = df['region'].map(region_map).value_counts()
         
+        if len(region_counts) == 0:
+            ax.text(0.5, 0.5, 'No data available', ha='center', va='center', transform=ax.transAxes)
+            return
+            
         colors = ['#1f77b4', '#ff7f0e', '#2ca02c', '#d62728']
-        bars = ax.bar(region_counts.index, region_counts.values, 
+        bars = ax.bar(range(len(region_counts)), region_counts.values, 
                      color=colors[:len(region_counts)], alpha=0.8)
         ax.set_title('Policyholders by Region', fontsize=14, fontweight='bold')
         ax.set_ylabel('Count')
-        ax.tick_params(axis='x', rotation=45)
+        ax.set_xticks(range(len(region_counts)))
+        ax.set_xticklabels(region_counts.index, rotation=45)
         
         # Add value labels
-        for bar in bars:
-            height = bar.get_height()
-            ax.text(bar.get_x() + bar.get_width()/2., height + 5,
-                   f'{int(height)}', ha='center', va='bottom')
+        for i, (bar, value) in enumerate(zip(bars, region_counts.values)):
+            ax.text(bar.get_x() + bar.get_width()/2., bar.get_height() + max(region_counts.values) * 0.01,
+                   f'{int(value)}', ha='center', va='bottom')
 
     def charges_vs_age_chart(ax):
         # Separate smokers and non-smokers
         non_smokers = df[df['smoker'] == 0]
         smokers = df[df['smoker'] == 1]
         
-        ax.scatter(non_smokers['age'], non_smokers['charges'], 
-                  alpha=0.6, label='Non-Smoker', color='blue', s=30)
-        ax.scatter(smokers['age'], smokers['charges'], 
-                  alpha=0.6, label='Smoker', color='red', s=30)
+        if len(non_smokers) > 0:
+            ax.scatter(non_smokers['age'], non_smokers['charges'], 
+                      alpha=0.6, label='Non-Smoker', color='blue', s=30)
+        
+        if len(smokers) > 0:
+            ax.scatter(smokers['age'], smokers['charges'], 
+                      alpha=0.6, label='Smoker', color='red', s=30)
         
         ax.set_title('Charges vs Age by Smoking Status', fontsize=14, fontweight='bold')
         ax.set_xlabel('Age')
         ax.set_ylabel('Charges ($)')
-        ax.legend()
+        
+        if len(non_smokers) > 0 or len(smokers) > 0:
+            ax.legend()
+        else:
+            ax.text(0.5, 0.5, 'No data available', ha='center', va='center', transform=ax.transAxes)
+            
         ax.grid(True, alpha=0.3)
 
     def smoker_charges_boxplot(ax):
-        smoker_data = [df[df['smoker'] == 0]['charges'], df[df['smoker'] == 1]['charges']]
-        box = ax.boxplot(smoker_data, labels=['Non-Smoker', 'Smoker'], patch_artist=True)
+        non_smoker_charges = df[df['smoker'] == 0]['charges'].dropna()
+        smoker_charges = df[df['smoker'] == 1]['charges'].dropna()
         
-        # Color the boxes
-        colors = ['lightblue', 'salmon']
-        for patch, color in zip(box['boxes'], colors):
-            patch.set_facecolor(color)
-            patch.set_alpha(0.7)
+        if len(non_smoker_charges) == 0 and len(smoker_charges) == 0:
+            ax.text(0.5, 0.5, 'No data available', ha='center', va='center', transform=ax.transAxes)
+            return
+            
+        # Prepare data for boxplot
+        smoker_data = []
+        labels = []
+        
+        if len(non_smoker_charges) > 0:
+            smoker_data.append(non_smoker_charges)
+            labels.append('Non-Smoker')
+            
+        if len(smoker_charges) > 0:
+            smoker_data.append(smoker_charges)
+            labels.append('Smoker')
+        
+        if smoker_data:
+            box = ax.boxplot(smoker_data, labels=labels, patch_artist=True)
+            
+            # Color the boxes
+            colors = ['lightblue', 'salmon']
+            for i, patch in enumerate(box['boxes']):
+                patch.set_facecolor(colors[i % len(colors)])
+                patch.set_alpha(0.7)
         
         ax.set_title('Charges: Smokers vs Non-Smokers', fontsize=14, fontweight='bold')
         ax.set_ylabel('Charges ($)')
@@ -260,25 +291,52 @@ elif page == "📊 Visualizations":
         non_smokers = df[df['smoker'] == 0]
         smokers = df[df['smoker'] == 1]
         
-        ax.scatter(non_smokers['bmi'], non_smokers['charges'], 
-                  alpha=0.6, label='Non-Smoker', color='blue', s=30)
-        ax.scatter(smokers['bmi'], smokers['charges'], 
-                  alpha=0.6, label='Smoker', color='red', s=30)
+        if len(non_smokers) > 0:
+            ax.scatter(non_smokers['bmi'], non_smokers['charges'], 
+                      alpha=0.6, label='Non-Smoker', color='blue', s=30)
+        
+        if len(smokers) > 0:
+            ax.scatter(smokers['bmi'], smokers['charges'], 
+                      alpha=0.6, label='Smoker', color='red', s=30)
         
         ax.set_title('Charges vs BMI by Smoking Status', fontsize=14, fontweight='bold')
         ax.set_xlabel('BMI')
         ax.set_ylabel('Charges ($)')
-        ax.legend()
+        
+        if len(non_smokers) > 0 or len(smokers) > 0:
+            ax.legend()
+        else:
+            ax.text(0.5, 0.5, 'No data available', ha='center', va='center', transform=ax.transAxes)
+            
         ax.grid(True, alpha=0.3)
 
     def gender_charges_chart(ax):
-        gender_data = [df[df['sex'] == 0]['charges'], df[df['sex'] == 1]['charges']]
-        box = ax.boxplot(gender_data, labels=['Female', 'Male'], patch_artist=True)
+        female_charges = df[df['sex'] == 0]['charges'].dropna()
+        male_charges = df[df['sex'] == 1]['charges'].dropna()
         
-        colors = ['pink', 'lightblue']
-        for patch, color in zip(box['boxes'], colors):
-            patch.set_facecolor(color)
-            patch.set_alpha(0.7)
+        if len(female_charges) == 0 and len(male_charges) == 0:
+            ax.text(0.5, 0.5, 'No data available', ha='center', va='center', transform=ax.transAxes)
+            return
+            
+        # Prepare data for boxplot
+        gender_data = []
+        labels = []
+        
+        if len(female_charges) > 0:
+            gender_data.append(female_charges)
+            labels.append('Female')
+            
+        if len(male_charges) > 0:
+            gender_data.append(male_charges)
+            labels.append('Male')
+        
+        if gender_data:
+            box = ax.boxplot(gender_data, labels=labels, patch_artist=True)
+            
+            colors = ['pink', 'lightblue']
+            for i, patch in enumerate(box['boxes']):
+                patch.set_facecolor(colors[i % len(colors)])
+                patch.set_alpha(0.7)
         
         ax.set_title('Charges by Gender', fontsize=14, fontweight='bold')
         ax.set_ylabel('Charges ($)')
