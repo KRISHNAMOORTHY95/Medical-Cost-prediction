@@ -126,6 +126,15 @@ def load_or_create_dataset():
 model = load_or_create_model()
 df = load_or_create_dataset()
 
+# Debug: Print data info
+if st.sidebar.checkbox("Show Debug Info"):
+    st.sidebar.write("Data shape:", df.shape)
+    st.sidebar.write("Data types:", df.dtypes)
+    st.sidebar.write("Sample data:")
+    st.sidebar.write(df.head())
+    st.sidebar.write("Unique values in smoker:", df['smoker'].unique())
+    st.sidebar.write("Unique values in sex:", df['sex'].unique())
+
 # Navigation
 st.sidebar.title("🏥 Navigation")
 page = st.sidebar.radio("Go to", ["🏠 Project Introduction", "📊 Visualizations", "💰 Cost Prediction"])
@@ -174,166 +183,200 @@ elif page == "📊 Visualizations":
 
     # Visualization functions
     def show_distribution_of_charges():
-        plt.figure(figsize=(12, 6))
-        plt.hist(df['charges'], bins=30, color='teal', alpha=0.7, edgecolor='black')
-        plt.title('Distribution of Medical Insurance Charges', fontsize=16, fontweight='bold')
-        plt.xlabel('Charges ($)', fontsize=12)
-        plt.ylabel('Frequency', fontsize=12)
-        plt.grid(True, alpha=0.3)
+        fig, ax = plt.subplots(figsize=(12, 6))
+        ax.hist(df['charges'], bins=30, color='teal', alpha=0.7, edgecolor='black')
+        ax.set_title('Distribution of Medical Insurance Charges', fontsize=16, fontweight='bold')
+        ax.set_xlabel('Charges ($)', fontsize=12)
+        ax.set_ylabel('Frequency', fontsize=12)
+        ax.grid(True, alpha=0.3)
         plt.tight_layout()
-        fig = plt.gcf()
         return fig
 
     def show_age_distribution():
-        plt.figure(figsize=(12, 6))
-        plt.hist(df['age'], bins=20, color='skyblue', alpha=0.7, edgecolor='black')
-        plt.title('Distribution of Age', fontsize=16, fontweight='bold')
-        plt.xlabel('Age', fontsize=12)
-        plt.ylabel('Frequency', fontsize=12)
-        plt.grid(True, alpha=0.3)
+        fig, ax = plt.subplots(figsize=(12, 6))
+        ax.hist(df['age'], bins=20, color='skyblue', alpha=0.7, edgecolor='black')
+        ax.set_title('Distribution of Age', fontsize=16, fontweight='bold')
+        ax.set_xlabel('Age', fontsize=12)
+        ax.set_ylabel('Frequency', fontsize=12)
+        ax.grid(True, alpha=0.3)
         plt.tight_layout()
-        fig = plt.gcf()
         return fig
 
     def show_smoker_non_smoker_count():
-        plt.figure(figsize=(8, 6))
+        fig, ax = plt.subplots(figsize=(8, 6))
         smoker_counts = df['smoker'].value_counts()
         labels = ['Non-Smoker', 'Smoker']
         counts = [smoker_counts.get(0, 0), smoker_counts.get(1, 0)]
         colors = ['lightblue', 'lightcoral']
         
-        plt.bar(labels, counts, color=colors, alpha=0.8, edgecolor='black')
-        plt.title('Count of Smokers vs Non-Smokers', fontsize=16, fontweight='bold')
-        plt.xlabel('Smoking Status', fontsize=12)
-        plt.ylabel('Number of Individuals', fontsize=12)
+        bars = ax.bar(labels, counts, color=colors, alpha=0.8, edgecolor='black')
+        ax.set_title('Count of Smokers vs Non-Smokers', fontsize=16, fontweight='bold')
+        ax.set_xlabel('Smoking Status', fontsize=12)
+        ax.set_ylabel('Number of Individuals', fontsize=12)
         
         # Add count labels on bars
-        for i, count in enumerate(counts):
-            plt.text(i, count + max(counts) * 0.01, str(count), ha='center', va='bottom')
+        for bar, count in zip(bars, counts):
+            height = bar.get_height()
+            ax.text(bar.get_x() + bar.get_width()/2., height + max(counts) * 0.01,
+                   f'{count}', ha='center', va='bottom')
         
         plt.tight_layout()
-        fig = plt.gcf()
         return fig
 
     def show_avg_bmi():
-        plt.figure(figsize=(12, 6))
+        fig, ax = plt.subplots(figsize=(12, 6))
         average_bmi = df['bmi'].mean()
-        plt.hist(df['bmi'], bins=30, color='purple', alpha=0.7, edgecolor='black')
-        plt.axvline(average_bmi, color='red', linestyle='--', linewidth=2,
+        ax.hist(df['bmi'], bins=30, color='purple', alpha=0.7, edgecolor='black')
+        ax.axvline(average_bmi, color='red', linestyle='--', linewidth=2,
                    label=f'Mean BMI: {average_bmi:.2f}')
-        plt.title('Distribution of BMI', fontsize=16, fontweight='bold')
-        plt.xlabel('BMI', fontsize=12)
-        plt.ylabel('Frequency', fontsize=12)
-        plt.legend()
-        plt.grid(True, alpha=0.3)
+        ax.set_title('Distribution of BMI', fontsize=16, fontweight='bold')
+        ax.set_xlabel('BMI', fontsize=12)
+        ax.set_ylabel('Frequency', fontsize=12)
+        ax.legend()
+        ax.grid(True, alpha=0.3)
         plt.tight_layout()
-        fig = plt.gcf()
         return fig
 
     def show_no_of_policyholders():
-        plt.figure(figsize=(10, 6))
+        fig, ax = plt.subplots(figsize=(10, 6))
         region_map = {0: 'Northeast', 1: 'Southeast', 2: 'Southwest', 3: 'Northwest'}
-        region_counts = df['region'].value_counts()
+        region_counts = df['region'].value_counts().sort_index()
         
         regions = [region_map[i] for i in sorted(region_map.keys())]
         counts = [region_counts.get(i, 0) for i in sorted(region_map.keys())]
         colors = ['#1f77b4', '#ff7f0e', '#2ca02c', '#d62728']
         
-        bars = plt.bar(regions, counts, color=colors, alpha=0.8, edgecolor='black')
-        plt.title('Number of Policyholders by Region', fontsize=16, fontweight='bold')
-        plt.xlabel('Region', fontsize=12)
-        plt.ylabel('Number of Policyholders', fontsize=12)
-        plt.grid(True, alpha=0.3, axis='y')
+        bars = ax.bar(regions, counts, color=colors, alpha=0.8, edgecolor='black')
+        ax.set_title('Number of Policyholders by Region', fontsize=16, fontweight='bold')
+        ax.set_xlabel('Region', fontsize=12)
+        ax.set_ylabel('Number of Policyholders', fontsize=12)
+        ax.grid(True, alpha=0.3, axis='y')
         
         # Add count labels on bars
         for bar, count in zip(bars, counts):
-            plt.text(bar.get_x() + bar.get_width()/2, bar.get_height() + max(counts) * 0.01,
-                    str(count), ha='center', va='bottom')
+            height = bar.get_height()
+            ax.text(bar.get_x() + bar.get_width()/2., height + max(counts) * 0.01,
+                   f'{count}', ha='center', va='bottom')
         
         plt.tight_layout()
-        fig = plt.gcf()
         return fig
 
     def show_charge_age():
-        plt.figure(figsize=(12, 8))
+        fig, ax = plt.subplots(figsize=(12, 8))
+        
+        # Filter data based on smoker status
         smokers = df[df['smoker'] == 1]
         non_smokers = df[df['smoker'] == 0]
         
-        plt.scatter(non_smokers['age'], non_smokers['charges'], alpha=0.6, 
-                   color='blue', label='Non-Smoker', s=60)
-        plt.scatter(smokers['age'], smokers['charges'], alpha=0.6, 
-                   color='red', label='Smoker', s=60)
+        # Check if we have data
+        if len(non_smokers) > 0:
+            ax.scatter(non_smokers['age'], non_smokers['charges'], alpha=0.6, 
+                      color='blue', label='Non-Smoker', s=60)
+        if len(smokers) > 0:
+            ax.scatter(smokers['age'], smokers['charges'], alpha=0.6, 
+                      color='red', label='Smoker', s=60)
         
-        plt.title('Charges vs. Age (Colored by Smoker Status)', fontsize=16, fontweight='bold')
-        plt.xlabel('Age', fontsize=12)
-        plt.ylabel('Charges ($)', fontsize=12)
-        plt.legend(title='Smoking Status')
-        plt.grid(True, alpha=0.3)
+        ax.set_title('Charges vs. Age (Colored by Smoker Status)', fontsize=16, fontweight='bold')
+        ax.set_xlabel('Age', fontsize=12)
+        ax.set_ylabel('Charges ($)', fontsize=12)
+        ax.legend(title='Smoking Status')
+        ax.grid(True, alpha=0.3)
         plt.tight_layout()
-        fig = plt.gcf()
         return fig
 
     def show_charges_smokervsnon():
-        plt.figure(figsize=(8, 6))
-        smoker_data = [df[df['smoker'] == 0]['charges'], df[df['smoker'] == 1]['charges']]
-        labels = ['Non-Smoker', 'Smoker']
+        fig, ax = plt.subplots(figsize=(8, 6))
         
-        box_plot = plt.boxplot(smoker_data, labels=labels, patch_artist=True)
-        colors = ['lightblue', 'lightcoral']
+        # Get data for each group
+        non_smoker_charges = df[df['smoker'] == 0]['charges']
+        smoker_charges = df[df['smoker'] == 1]['charges']
         
-        for patch, color in zip(box_plot['boxes'], colors):
-            patch.set_facecolor(color)
-            patch.set_alpha(0.7)
+        # Create box plot data
+        data_to_plot = []
+        labels = []
         
-        plt.title('Medical Charges: Smokers vs Non-Smokers', fontsize=16, fontweight='bold')
-        plt.xlabel('Smoking Status', fontsize=12)
-        plt.ylabel('Charges ($)', fontsize=12)
-        plt.grid(True, alpha=0.3, axis='y')
+        if len(non_smoker_charges) > 0:
+            data_to_plot.append(non_smoker_charges)
+            labels.append('Non-Smoker')
+        
+        if len(smoker_charges) > 0:
+            data_to_plot.append(smoker_charges)
+            labels.append('Smoker')
+        
+        if data_to_plot:
+            box_plot = ax.boxplot(data_to_plot, labels=labels, patch_artist=True)
+            colors = ['lightblue', 'lightcoral'][:len(data_to_plot)]
+            
+            for patch, color in zip(box_plot['boxes'], colors):
+                patch.set_facecolor(color)
+                patch.set_alpha(0.7)
+        
+        ax.set_title('Medical Charges: Smokers vs Non-Smokers', fontsize=16, fontweight='bold')
+        ax.set_xlabel('Smoking Status', fontsize=12)
+        ax.set_ylabel('Charges ($)', fontsize=12)
+        ax.grid(True, alpha=0.3, axis='y')
         plt.tight_layout()
-        fig = plt.gcf()
         return fig
 
     def show_bmi_charge():
-        plt.figure(figsize=(12, 8))
+        fig, ax = plt.subplots(figsize=(12, 8))
+        
+        # Filter data based on smoker status
         smokers = df[df['smoker'] == 1]
         non_smokers = df[df['smoker'] == 0]
         
-        plt.scatter(non_smokers['bmi'], non_smokers['charges'], alpha=0.6, 
-                   color='blue', label='Non-Smoker', s=60)
-        plt.scatter(smokers['bmi'], smokers['charges'], alpha=0.6, 
-                   color='red', label='Smoker', s=60)
+        # Check if we have data
+        if len(non_smokers) > 0:
+            ax.scatter(non_smokers['bmi'], non_smokers['charges'], alpha=0.6, 
+                      color='blue', label='Non-Smoker', s=60)
+        if len(smokers) > 0:
+            ax.scatter(smokers['bmi'], smokers['charges'], alpha=0.6, 
+                      color='red', label='Smoker', s=60)
         
-        plt.title('Charges vs. BMI (Colored by Smoker Status)', fontsize=16, fontweight='bold')
-        plt.xlabel('BMI', fontsize=12)
-        plt.ylabel('Charges ($)', fontsize=12)
-        plt.legend(title='Smoking Status')
-        plt.grid(True, alpha=0.3)
+        ax.set_title('Charges vs. BMI (Colored by Smoker Status)', fontsize=16, fontweight='bold')
+        ax.set_xlabel('BMI', fontsize=12)
+        ax.set_ylabel('Charges ($)', fontsize=12)
+        ax.legend(title='Smoking Status')
+        ax.grid(True, alpha=0.3)
         plt.tight_layout()
-        fig = plt.gcf()
         return fig
 
     def show_men_women_charge():
-        plt.figure(figsize=(10, 6))
-        male_data = df[df['sex'] == 1]['charges']
-        female_data = df[df['sex'] == 0]['charges']
+        fig, ax = plt.subplots(figsize=(10, 6))
         
-        box_plot = plt.boxplot([female_data, male_data], labels=['Female', 'Male'], patch_artist=True)
-        colors = ['pink', 'lightblue']
+        # Get data for each gender (0=Female, 1=Male in your encoding)
+        female_charges = df[df['sex'] == 0]['charges']
+        male_charges = df[df['sex'] == 1]['charges']
         
-        for patch, color in zip(box_plot['boxes'], colors):
-            patch.set_facecolor(color)
-            patch.set_alpha(0.7)
+        # Create box plot data
+        data_to_plot = []
+        labels = []
         
-        plt.title('Medical Charges: Male vs Female', fontsize=16, fontweight='bold')
-        plt.xlabel('Gender', fontsize=12)
-        plt.ylabel('Charges ($)', fontsize=12)
-        plt.grid(True, alpha=0.3, axis='y')
+        if len(female_charges) > 0:
+            data_to_plot.append(female_charges)
+            labels.append('Female')
+        
+        if len(male_charges) > 0:
+            data_to_plot.append(male_charges)
+            labels.append('Male')
+        
+        if data_to_plot:
+            box_plot = ax.boxplot(data_to_plot, labels=labels, patch_artist=True)
+            colors = ['pink', 'lightblue'][:len(data_to_plot)]
+            
+            for patch, color in zip(box_plot['boxes'], colors):
+                patch.set_facecolor(color)
+                patch.set_alpha(0.7)
+        
+        ax.set_title('Medical Charges: Male vs Female', fontsize=16, fontweight='bold')
+        ax.set_xlabel('Gender', fontsize=12)
+        ax.set_ylabel('Charges ($)', fontsize=12)
+        ax.grid(True, alpha=0.3, axis='y')
         plt.tight_layout()
-        fig = plt.gcf()
         return fig
 
     def show_correlation_children_charge():
-        plt.figure(figsize=(10, 6))
+        fig, ax = plt.subplots(figsize=(10, 6))
         children_avg = df.groupby('children')['charges'].mean()
         
         # Ensure we have data for children 0-5
@@ -341,45 +384,47 @@ elif page == "📊 Visualizations":
         avg_charges = [children_avg.get(i, 0) for i in children_range]
         
         colors = plt.cm.viridis(np.linspace(0, 1, len(children_range)))
-        bars = plt.bar(children_range, avg_charges, color=colors, alpha=0.8, edgecolor='black')
+        bars = ax.bar(children_range, avg_charges, color=colors, alpha=0.8, edgecolor='black')
         
-        plt.title('Average Charges by Number of Children', fontsize=16, fontweight='bold')
-        plt.xlabel('Number of Children', fontsize=12)
-        plt.ylabel('Average Charges ($)', fontsize=12)
-        plt.grid(True, alpha=0.3, axis='y')
+        ax.set_title('Average Charges by Number of Children', fontsize=16, fontweight='bold')
+        ax.set_xlabel('Number of Children', fontsize=12)
+        ax.set_ylabel('Average Charges ($)', fontsize=12)
+        ax.grid(True, alpha=0.3, axis='y')
         
         # Add value labels on bars
         for bar, avg_charge in zip(bars, avg_charges):
             if avg_charge > 0:
-                plt.text(bar.get_x() + bar.get_width()/2, bar.get_height() + max(avg_charges) * 0.01,
-                        f'${avg_charge:,.0f}', ha='center', va='bottom')
+                height = bar.get_height()
+                ax.text(bar.get_x() + bar.get_width()/2., height + max(avg_charges) * 0.01,
+                       f'${avg_charge:,.0f}', ha='center', va='bottom')
         
         plt.tight_layout()
-        fig = plt.gcf()
         return fig
 
     def show_numeric_features():
-        plt.figure(figsize=(8, 6))
+        fig, ax = plt.subplots(figsize=(8, 6))
         numeric_cols = ['age', 'bmi', 'children', 'charges']
         corr_matrix = df[numeric_cols].corr()
         
         # Create heatmap manually
-        im = plt.imshow(corr_matrix, cmap='coolwarm', vmin=-1, vmax=1)
+        im = ax.imshow(corr_matrix, cmap='coolwarm', vmin=-1, vmax=1)
         
         # Set ticks and labels
-        plt.xticks(range(len(numeric_cols)), numeric_cols)
-        plt.yticks(range(len(numeric_cols)), numeric_cols)
+        ax.set_xticks(range(len(numeric_cols)))
+        ax.set_yticks(range(len(numeric_cols)))
+        ax.set_xticklabels(numeric_cols)
+        ax.set_yticklabels(numeric_cols)
         
         # Add correlation values as text
         for i in range(len(numeric_cols)):
             for j in range(len(numeric_cols)):
-                plt.text(j, i, f'{corr_matrix.iloc[i, j]:.2f}', 
-                        ha='center', va='center', color='black' if abs(corr_matrix.iloc[i, j]) < 0.5 else 'white')
+                text_color = 'white' if abs(corr_matrix.iloc[i, j]) > 0.5 else 'black'
+                ax.text(j, i, f'{corr_matrix.iloc[i, j]:.2f}', 
+                       ha='center', va='center', color=text_color)
         
-        plt.colorbar(im, shrink=0.8)
-        plt.title('Correlation Between Numeric Features', fontsize=16, fontweight='bold')
+        plt.colorbar(im, ax=ax, shrink=0.8)
+        ax.set_title('Correlation Between Numeric Features', fontsize=16, fontweight='bold')
         plt.tight_layout()
-        fig = plt.gcf()
         return fig
 
     # Questions dictionary
@@ -411,6 +456,11 @@ elif page == "📊 Visualizations":
             plt.close(fig)
         except Exception as e:
             st.error(f"Error creating visualization: {str(e)}")
+            # Debug information
+            st.write("Debug info:")
+            st.write(f"Data shape: {df.shape}")
+            st.write(f"Data columns: {df.columns.tolist()}")
+            st.write(f"First few rows: {df.head()}")
 
     with col2:
         st.markdown("### 💡 Insights")
