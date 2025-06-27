@@ -9,6 +9,10 @@ from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import LabelEncoder
 import pickle
 
+# Set matplotlib backend for Streamlit
+plt.style.use('default')
+sns.set_palette("husl")
+
 # Configure page
 st.set_page_config(
     page_title="Medical Insurance Cost Prediction",
@@ -170,133 +174,212 @@ elif page == "📊 Visualizations":
 
     # Visualization functions
     def show_distribution_of_charges():
-        fig, ax = plt.subplots(figsize=(12, 6))
-        sns.histplot(df['charges'], kde=True, bins=30, color='teal', alpha=0.7, ax=ax)
-        ax.set_title('Distribution of Medical Insurance Charges', fontsize=16, fontweight='bold')
-        ax.set_xlabel('Charges ($)', fontsize=12)
-        ax.set_ylabel('Frequency', fontsize=12)
-        ax.grid(True, alpha=0.3)
+        plt.figure(figsize=(12, 6))
+        plt.hist(df['charges'], bins=30, color='teal', alpha=0.7, edgecolor='black')
+        plt.title('Distribution of Medical Insurance Charges', fontsize=16, fontweight='bold')
+        plt.xlabel('Charges ($)', fontsize=12)
+        plt.ylabel('Frequency', fontsize=12)
+        plt.grid(True, alpha=0.3)
+        plt.tight_layout()
+        fig = plt.gcf()
         return fig
 
     def show_age_distribution():
-        fig, ax = plt.subplots(figsize=(12, 6))
-        sns.histplot(df['age'], kde=True, bins=20, color='skyblue', alpha=0.7, ax=ax)
-        ax.set_title('Distribution of Age', fontsize=16, fontweight='bold')
-        ax.set_xlabel('Age', fontsize=12)
-        ax.set_ylabel('Frequency', fontsize=12)
-        ax.grid(True, alpha=0.3)
+        plt.figure(figsize=(12, 6))
+        plt.hist(df['age'], bins=20, color='skyblue', alpha=0.7, edgecolor='black')
+        plt.title('Distribution of Age', fontsize=16, fontweight='bold')
+        plt.xlabel('Age', fontsize=12)
+        plt.ylabel('Frequency', fontsize=12)
+        plt.grid(True, alpha=0.3)
+        plt.tight_layout()
+        fig = plt.gcf()
         return fig
 
     def show_smoker_non_smoker_count():
-        fig, ax = plt.subplots(figsize=(8, 6))
-        df['smoker_label'] = df['smoker'].map({0: 'Non-Smoker', 1: 'Smoker'})
-        sns.countplot(x='smoker_label', data=df, palette='Set2', order=['Non-Smoker', 'Smoker'], ax=ax)
-        ax.set_title('Count of Smokers vs Non-Smokers', fontsize=16, fontweight='bold')
-        ax.set_xlabel('Smoking Status', fontsize=12)
-        ax.set_ylabel('Number of Individuals', fontsize=12)
+        plt.figure(figsize=(8, 6))
+        smoker_counts = df['smoker'].value_counts()
+        labels = ['Non-Smoker', 'Smoker']
+        counts = [smoker_counts.get(0, 0), smoker_counts.get(1, 0)]
+        colors = ['lightblue', 'lightcoral']
+        
+        plt.bar(labels, counts, color=colors, alpha=0.8, edgecolor='black')
+        plt.title('Count of Smokers vs Non-Smokers', fontsize=16, fontweight='bold')
+        plt.xlabel('Smoking Status', fontsize=12)
+        plt.ylabel('Number of Individuals', fontsize=12)
+        
+        # Add count labels on bars
+        for i, count in enumerate(counts):
+            plt.text(i, count + max(counts) * 0.01, str(count), ha='center', va='bottom')
+        
+        plt.tight_layout()
+        fig = plt.gcf()
         return fig
 
     def show_avg_bmi():
-        fig, ax = plt.subplots(figsize=(12, 6))
+        plt.figure(figsize=(12, 6))
         average_bmi = df['bmi'].mean()
-        sns.histplot(df['bmi'], kde=True, bins=30, color='purple', alpha=0.7, ax=ax)
-        ax.axvline(average_bmi, color='red', linestyle='--', linewidth=2,
+        plt.hist(df['bmi'], bins=30, color='purple', alpha=0.7, edgecolor='black')
+        plt.axvline(average_bmi, color='red', linestyle='--', linewidth=2,
                    label=f'Mean BMI: {average_bmi:.2f}')
-        ax.set_title('Distribution of BMI', fontsize=16, fontweight='bold')
-        ax.set_xlabel('BMI', fontsize=12)
-        ax.set_ylabel('Frequency', fontsize=12)
-        ax.legend()
-        ax.grid(True, alpha=0.3)
+        plt.title('Distribution of BMI', fontsize=16, fontweight='bold')
+        plt.xlabel('BMI', fontsize=12)
+        plt.ylabel('Frequency', fontsize=12)
+        plt.legend()
+        plt.grid(True, alpha=0.3)
+        plt.tight_layout()
+        fig = plt.gcf()
         return fig
 
     def show_no_of_policyholders():
-        fig, ax = plt.subplots(figsize=(10, 6))
+        plt.figure(figsize=(10, 6))
         region_map = {0: 'Northeast', 1: 'Southeast', 2: 'Southwest', 3: 'Northwest'}
-        temp_df = df.copy()
-        temp_df['region_name'] = temp_df['region'].map(region_map)
-        region_counts = temp_df['region_name'].value_counts().reindex(region_map.values(), fill_value=0)
+        region_counts = df['region'].value_counts()
+        
+        regions = [region_map[i] for i in sorted(region_map.keys())]
+        counts = [region_counts.get(i, 0) for i in sorted(region_map.keys())]
         colors = ['#1f77b4', '#ff7f0e', '#2ca02c', '#d62728']
-        bars = ax.bar(region_counts.index, region_counts.values, color=colors, alpha=0.8)
-        ax.set_title('Number of Policyholders by Region', fontsize=16, fontweight='bold')
-        ax.set_xlabel('Region', fontsize=12)
-        ax.set_ylabel('Number of Policyholders', fontsize=12)
-        ax.grid(True, alpha=0.3, axis='y')
-        for bar, count in zip(bars, region_counts.values):
-            ax.text(bar.get_x() + bar.get_width()/2, bar.get_height() + 5,
+        
+        bars = plt.bar(regions, counts, color=colors, alpha=0.8, edgecolor='black')
+        plt.title('Number of Policyholders by Region', fontsize=16, fontweight='bold')
+        plt.xlabel('Region', fontsize=12)
+        plt.ylabel('Number of Policyholders', fontsize=12)
+        plt.grid(True, alpha=0.3, axis='y')
+        
+        # Add count labels on bars
+        for bar, count in zip(bars, counts):
+            plt.text(bar.get_x() + bar.get_width()/2, bar.get_height() + max(counts) * 0.01,
                     str(count), ha='center', va='bottom')
+        
+        plt.tight_layout()
+        fig = plt.gcf()
         return fig
 
     def show_charge_age():
-        fig, ax = plt.subplots(figsize=(12, 8))
-        smoker_labels = df['smoker'].map({0: 'Non-Smoker', 1: 'Smoker'})
-        temp_df = df.copy()
-        temp_df['smoker_label'] = smoker_labels
-        sns.scatterplot(x='age', y='charges', hue='smoker_label', data=temp_df,
-                       alpha=0.6, palette='Set1', s=60, ax=ax)
-        ax.set_title('Charges vs. Age (Colored by Smoker Status)', fontsize=16, fontweight='bold')
-        ax.set_xlabel('Age', fontsize=12)
-        ax.set_ylabel('Charges ($)', fontsize=12)
-        ax.legend(title='Smoking Status')
-        ax.grid(True, alpha=0.3)
+        plt.figure(figsize=(12, 8))
+        smokers = df[df['smoker'] == 1]
+        non_smokers = df[df['smoker'] == 0]
+        
+        plt.scatter(non_smokers['age'], non_smokers['charges'], alpha=0.6, 
+                   color='blue', label='Non-Smoker', s=60)
+        plt.scatter(smokers['age'], smokers['charges'], alpha=0.6, 
+                   color='red', label='Smoker', s=60)
+        
+        plt.title('Charges vs. Age (Colored by Smoker Status)', fontsize=16, fontweight='bold')
+        plt.xlabel('Age', fontsize=12)
+        plt.ylabel('Charges ($)', fontsize=12)
+        plt.legend(title='Smoking Status')
+        plt.grid(True, alpha=0.3)
+        plt.tight_layout()
+        fig = plt.gcf()
         return fig
 
     def show_charges_smokervsnon():
-        fig, ax = plt.subplots(figsize=(8, 6))
-        df['smoker_label'] = df['smoker'].map({0: 'Non-Smoker', 1: 'Smoker'})
-        sns.boxplot(x='smoker_label', y='charges', data=df, palette='Set2',
-                    order=['Non-Smoker', 'Smoker'], ax=ax)
-        ax.set_title('Medical Charges: Smokers vs Non-Smokers', fontsize=16, fontweight='bold')
-        ax.set_xlabel('Smoking Status', fontsize=12)
-        ax.set_ylabel('Charges ($)', fontsize=12)
-        ax.grid(True, alpha=0.3, axis='y')
+        plt.figure(figsize=(8, 6))
+        smoker_data = [df[df['smoker'] == 0]['charges'], df[df['smoker'] == 1]['charges']]
+        labels = ['Non-Smoker', 'Smoker']
+        
+        box_plot = plt.boxplot(smoker_data, labels=labels, patch_artist=True)
+        colors = ['lightblue', 'lightcoral']
+        
+        for patch, color in zip(box_plot['boxes'], colors):
+            patch.set_facecolor(color)
+            patch.set_alpha(0.7)
+        
+        plt.title('Medical Charges: Smokers vs Non-Smokers', fontsize=16, fontweight='bold')
+        plt.xlabel('Smoking Status', fontsize=12)
+        plt.ylabel('Charges ($)', fontsize=12)
+        plt.grid(True, alpha=0.3, axis='y')
+        plt.tight_layout()
+        fig = plt.gcf()
         return fig
 
     def show_bmi_charge():
-        fig, ax = plt.subplots(figsize=(12, 8))
-        smoker_labels = df['smoker'].map({0: 'Non-Smoker', 1: 'Smoker'})
-        temp_df = df.copy()
-        temp_df['smoker_label'] = smoker_labels
-        sns.scatterplot(x='bmi', y='charges', hue='smoker_label', data=temp_df,
-                       alpha=0.6, palette='Set1', s=60, ax=ax)
-        ax.set_title('Charges vs. BMI (Colored by Smoker Status)', fontsize=16, fontweight='bold')
-        ax.set_xlabel('BMI', fontsize=12)
-        ax.set_ylabel('Charges ($)', fontsize=12)
-        ax.legend(title='Smoking Status')
-        ax.grid(True, alpha=0.3)
+        plt.figure(figsize=(12, 8))
+        smokers = df[df['smoker'] == 1]
+        non_smokers = df[df['smoker'] == 0]
+        
+        plt.scatter(non_smokers['bmi'], non_smokers['charges'], alpha=0.6, 
+                   color='blue', label='Non-Smoker', s=60)
+        plt.scatter(smokers['bmi'], smokers['charges'], alpha=0.6, 
+                   color='red', label='Smoker', s=60)
+        
+        plt.title('Charges vs. BMI (Colored by Smoker Status)', fontsize=16, fontweight='bold')
+        plt.xlabel('BMI', fontsize=12)
+        plt.ylabel('Charges ($)', fontsize=12)
+        plt.legend(title='Smoking Status')
+        plt.grid(True, alpha=0.3)
+        plt.tight_layout()
+        fig = plt.gcf()
         return fig
 
     def show_men_women_charge():
-        fig, ax = plt.subplots(figsize=(10, 6))
-        df['sex_label'] = df['sex'].map({0: 'Female', 1: 'Male'})
-        sns.boxplot(x='sex_label', y='charges', data=df, palette='pastel',
-                    order=['Female', 'Male'], ax=ax)
-        ax.set_title('Medical Charges: Male vs Female', fontsize=16, fontweight='bold')
-        ax.set_xlabel('Gender', fontsize=12)
-        ax.set_ylabel('Charges ($)', fontsize=12)
-        ax.grid(True, alpha=0.3, axis='y')
+        plt.figure(figsize=(10, 6))
+        male_data = df[df['sex'] == 1]['charges']
+        female_data = df[df['sex'] == 0]['charges']
+        
+        box_plot = plt.boxplot([female_data, male_data], labels=['Female', 'Male'], patch_artist=True)
+        colors = ['pink', 'lightblue']
+        
+        for patch, color in zip(box_plot['boxes'], colors):
+            patch.set_facecolor(color)
+            patch.set_alpha(0.7)
+        
+        plt.title('Medical Charges: Male vs Female', fontsize=16, fontweight='bold')
+        plt.xlabel('Gender', fontsize=12)
+        plt.ylabel('Charges ($)', fontsize=12)
+        plt.grid(True, alpha=0.3, axis='y')
+        plt.tight_layout()
+        fig = plt.gcf()
         return fig
 
     def show_correlation_children_charge():
-        fig, ax = plt.subplots(figsize=(10, 6))
-        children_avg = df.groupby('children')['charges'].mean().reindex(range(0, 6), fill_value=0)
-        colors = plt.cm.viridis(np.linspace(0, 1, len(children_avg)))
-        bars = ax.bar(children_avg.index, children_avg.values, color=colors, alpha=0.8)
-        ax.set_title('Average Charges by Number of Children', fontsize=16, fontweight='bold')
-        ax.set_xlabel('Number of Children', fontsize=12)
-        ax.set_ylabel('Average Charges ($)', fontsize=12)
-        ax.grid(True, alpha=0.3, axis='y')
-        for bar, avg_charge in zip(bars, children_avg.values):
-            ax.text(bar.get_x() + bar.get_width()/2, bar.get_height() + 100,
-                    f'${avg_charge:,.0f}', ha='center', va='bottom')
+        plt.figure(figsize=(10, 6))
+        children_avg = df.groupby('children')['charges'].mean()
+        
+        # Ensure we have data for children 0-5
+        children_range = range(0, max(6, children_avg.index.max() + 1))
+        avg_charges = [children_avg.get(i, 0) for i in children_range]
+        
+        colors = plt.cm.viridis(np.linspace(0, 1, len(children_range)))
+        bars = plt.bar(children_range, avg_charges, color=colors, alpha=0.8, edgecolor='black')
+        
+        plt.title('Average Charges by Number of Children', fontsize=16, fontweight='bold')
+        plt.xlabel('Number of Children', fontsize=12)
+        plt.ylabel('Average Charges ($)', fontsize=12)
+        plt.grid(True, alpha=0.3, axis='y')
+        
+        # Add value labels on bars
+        for bar, avg_charge in zip(bars, avg_charges):
+            if avg_charge > 0:
+                plt.text(bar.get_x() + bar.get_width()/2, bar.get_height() + max(avg_charges) * 0.01,
+                        f'${avg_charge:,.0f}', ha='center', va='bottom')
+        
+        plt.tight_layout()
+        fig = plt.gcf()
         return fig
 
     def show_numeric_features():
-        fig, ax = plt.subplots(figsize=(8, 6))
+        plt.figure(figsize=(8, 6))
         numeric_cols = ['age', 'bmi', 'children', 'charges']
         corr_matrix = df[numeric_cols].corr()
-        sns.heatmap(corr_matrix, annot=True, cmap='coolwarm', fmt=".2f",
-                   linewidths=0.5, square=True, cbar_kws={'shrink': 0.8}, ax=ax)
-        ax.set_title('Correlation Between Numeric Features', fontsize=16, fontweight='bold')
+        
+        # Create heatmap manually
+        im = plt.imshow(corr_matrix, cmap='coolwarm', vmin=-1, vmax=1)
+        
+        # Set ticks and labels
+        plt.xticks(range(len(numeric_cols)), numeric_cols)
+        plt.yticks(range(len(numeric_cols)), numeric_cols)
+        
+        # Add correlation values as text
+        for i in range(len(numeric_cols)):
+            for j in range(len(numeric_cols)):
+                plt.text(j, i, f'{corr_matrix.iloc[i, j]:.2f}', 
+                        ha='center', va='center', color='black' if abs(corr_matrix.iloc[i, j]) < 0.5 else 'white')
+        
+        plt.colorbar(im, shrink=0.8)
+        plt.title('Correlation Between Numeric Features', fontsize=16, fontweight='bold')
+        plt.tight_layout()
+        fig = plt.gcf()
         return fig
 
     # Questions dictionary
