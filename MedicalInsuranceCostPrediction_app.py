@@ -1,559 +1,122 @@
+# app.py
+
 import streamlit as st
 import pandas as pd
+import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
-import numpy as np
-import os
-from sklearn.ensemble import RandomForestRegressor
-from sklearn.model_selection import train_test_split
-from sklearn.preprocessing import LabelEncoder
 import pickle
+from sklearn.ensemble import RandomForestRegressor
+import warnings
 
-# Set matplotlib backend for Streamlit
-plt.style.use('default')
-sns.set_palette("husl")
+warnings.filterwarnings("ignore")
+st.set_page_config(page_title="Medical Insurance Cost Prediction", page_icon="🏥", layout="wide")
 
-# Configure page
-st.set_page_config(
-    page_title="Medical Insurance Cost Prediction",
-    page_icon="🏥",
-    layout="wide"
-)
-
-# Function to create and train model if not exists
-@st.cache_data
+# Load or train model
+@st.cache_resource
 def load_or_create_model():
     try:
-        # Try to load existing model
-        with open('model.pkl', 'rb') as f:
+        with open("model.pkl", "rb") as f:
             model = pickle.load(f)
         return model
     except FileNotFoundError:
-        st.warning("Model file not found. Creating a new model with sample data.")
-        # Create sample data for demonstration if model is not found
-        np.random.seed(42)
-        n_samples = 1000
-
-        ages = np.random.randint(18, 65, n_samples)
-        bmis = np.random.normal(28, 6, n_samples)
-        bmis = np.clip(bmis, 15, 50)
-        children = np.random.randint(0, 6, n_samples)
-        smokers = np.random.choice([0, 1], n_samples, p=[0.8, 0.2])
-        sexes = np.random.choice([0, 1], n_samples)
-        regions = np.random.choice([0, 1, 2, 3], n_samples)
-
-        # Create charges with realistic relationships
-        charges = (
-            ages * 200 +
-            bmis * 100 +
-            children * 500 +
-            smokers * 15000 +
-            sexes * 200 +
-            regions * 300 +
-            np.random.normal(0, 2000, n_samples)
-        )
-        charges = np.clip(charges, 1000, 50000)
-
-        sample_df = pd.DataFrame({
-            'age': ages,
-            'bmi': bmis,
-            'children': children,
-            'sex': sexes,
-            'smoker': smokers,
-            'region': regions,
-            'charges': charges
+        n = 1000
+        df = pd.DataFrame({
+            "age": np.random.randint(18, 65, n),
+            "bmi": np.random.normal(28, 6, n).clip(15, 50),
+            "children": np.random.randint(0, 5, n),
+            "sex": np.random.randint(0, 2, n),
+            "smoker": np.random.randint(0, 2, n),
+            "region": np.random.randint(0, 4, n),
         })
-
-        # Train model
-        X = sample_df[['age', 'bmi', 'children', 'sex', 'smoker', 'region']]
-        y = sample_df['charges']
-
-        model = RandomForestRegressor(n_estimators=100, random_state=42)
+        df["charges"] = df["age"] * 200 + df["bmi"] * 100 + df["children"] * 500 + \
+                        df["smoker"] * 15000 + df["sex"] * 200 + df["region"] * 300 + \
+                        np.random.normal(0, 2000, n)
+        df["charges"] = df["charges"].clip(1000, 50000)
+        X = df[["age", "bmi", "children", "sex", "smoker", "region"]]
+        y = df["charges"]
+        model = RandomForestRegressor(n_estimators=100)
         model.fit(X, y)
-
-        # Save model
-        with open('model.pkl', 'wb') as f:
+        with open("model.pkl", "wb") as f:
             pickle.dump(model, f)
-
         return model
 
-# Function to load or create dataset
+# Load data
 @st.cache_data
-def load_or_create_dataset():
+def load_data():
     try:
-        # Try to load existing dataset
-        df = pd.read_csv("medical_insurance.csv")
-        return df
-    except FileNotFoundError:
-        st.warning("Dataset file not found. Creating sample data for demonstration.")
-        # Create sample data
-        np.random.seed(42)
-        n_samples = 1000
-
-        ages = np.random.randint(18, 65, n_samples)
-        bmis = np.random.normal(28, 6, n_samples)
-        bmis = np.clip(bmis, 15, 50)
-        children = np.random.randint(0, 6, n_samples)
-        smokers = np.random.choice([0, 1], n_samples, p=[0.8, 0.2])
-        sexes = np.random.choice([0, 1], n_samples)
-        regions = np.random.choice([0, 1, 2, 3], n_samples)
-
-        # Create charges with realistic relationships
-        charges = (
-            ages * 200 +
-            bmis * 100 +
-            children * 500 +
-            smokers * 15000 +
-            sexes * 200 +
-            regions * 300 +
-            np.random.normal(0, 2000, n_samples)
-        )
-        charges = np.clip(charges, 1000, 50000)
-
-        df = pd.DataFrame({
-            'age': ages,
-            'bmi': bmis,
-            'children': children,
-            'sex': sexes,
-            'smoker': smokers,
-            'region': regions,
-            'charges': charges
+        return pd.read_csv("medical_insurance.csv")
+    except:
+        return pd.DataFrame({
+            "age": np.random.randint(18, 65, 1000),
+            "bmi": np.random.normal(28, 6, 1000).clip(15, 50),
+            "children": np.random.randint(0, 5, 1000),
+            "sex": np.random.randint(0, 2, 1000),
+            "smoker": np.random.randint(0, 2, 1000),
+            "region": np.random.randint(0, 4, 1000),
+            "charges": np.random.randint(2000, 30000, 1000)
         })
 
-        return df
-
-# Load model and data
 model = load_or_create_model()
-df = load_or_create_dataset()
+df = load_data()
 
-# Debug: Print data info
-if st.sidebar.checkbox("Show Debug Info"):
-    st.sidebar.write("Data shape:", df.shape)
-    st.sidebar.write("Data types:", df.dtypes)
-    st.sidebar.write("Sample data:")
-    st.sidebar.write(df.head())
-    st.sidebar.write("Unique values in smoker:", df['smoker'].unique())
-    st.sidebar.write("Unique values in sex:", df['sex'].unique())
+# Sidebar navigation
+st.sidebar.title("Navigation")
+page = st.sidebar.radio("Go to", ["Home", "Visualization", "Prediction"])
 
-# Navigation
-st.sidebar.title("🏥 Navigation")
-page = st.sidebar.radio("Go to", ["🏠 Project Introduction", "📊 Visualizations", "💰 Cost Prediction"])
-
-# Page 1: Project Introduction
-if page == "🏠 Project Introduction":
+if page == "Home":
     st.title("🏥 Medical Insurance Cost Prediction")
+    st.markdown("""
+    Predict medical insurance charges based on:
+    - Age
+    - BMI
+    - Gender
+    - Children
+    - Smoker
+    - Region
+    """)
+    st.metric("Total records", len(df))
 
-    col1, col2 = st.columns([2, 1])
-
-    with col1:
-        st.markdown("""
-        ## Welcome to the Medical Insurance Cost Prediction App!
-
-        This application uses machine learning to analyze and predict medical insurance costs based on various factors.
-
-        ### 🎯 Project Goals:
-        - **Explore** patterns in insurance charges based on demographic and health factors
-        - **Analyze** the relationship between age, BMI, smoking habits, region, and costs
-        - **Predict** insurance charges using a Random Forest regression model
-
-        ### 📊 Key Features:
-        - **Interactive Visualizations**: Explore data through various charts and graphs
-        - **Cost Prediction**: Get instant predictions for insurance costs
-        - **Comprehensive Analysis**: Understand which factors most influence insurance costs
-
-        ### 🔍 Factors Analyzed:
-        - Age
-        - Body Mass Index (BMI)
-        - Number of children
-        - Smoking status
-        - Gender
-        - Geographic region
-        """)
-
-    with col2:
-        st.markdown("### 📈 Dataset Overview")
-        st.info(f"**Total Records**: {len(df):,}")
-        st.info(f"**Average Charge**: ${df['charges'].mean():,.2f}")
-        st.info(f"**Max Charge**: ${df['charges'].max():,.2f}")
-        st.info(f"**Min Charge**: ${df['charges'].min():,.2f}")
-
-# Page 2: Visualizations
-elif page == "📊 Visualizations":
+elif page == "Visualization":
     st.title("📊 Exploratory Data Analysis")
+    chart = st.selectbox("Choose visualization", [
+        "Distribution of Charges",
+        "Charges vs Age",
+        "Charges vs BMI",
+        "Correlation Matrix"
+    ])
+    if chart == "Distribution of Charges":
+        fig, ax = plt.subplots()
+        ax.hist(df["charges"], bins=30, color="teal", edgecolor="black")
+        st.pyplot(fig)
+    elif chart == "Charges vs Age":
+        sns.scatterplot(data=df, x="age", y="charges", hue="smoker")
+        st.pyplot(plt.gcf())
+    elif chart == "Charges vs BMI":
+        sns.scatterplot(data=df, x="bmi", y="charges", hue="smoker")
+        st.pyplot(plt.gcf())
+    elif chart == "Correlation Matrix":
+        sns.heatmap(df.corr(), annot=True, cmap="coolwarm")
+        st.pyplot(plt.gcf())
 
-    # Visualization functions
-    def show_distribution_of_charges():
-        fig, ax = plt.subplots(figsize=(12, 6))
-        ax.hist(df['charges'], bins=30, color='teal', alpha=0.7, edgecolor='black')
-        ax.set_title('Distribution of Medical Insurance Charges', fontsize=16, fontweight='bold')
-        ax.set_xlabel('Charges ($)', fontsize=12)
-        ax.set_ylabel('Frequency', fontsize=12)
-        ax.grid(True, alpha=0.3)
-        plt.tight_layout()
-        return fig
-
-    def show_age_distribution():
-        fig, ax = plt.subplots(figsize=(12, 6))
-        ax.hist(df['age'], bins=20, color='skyblue', alpha=0.7, edgecolor='black')
-        ax.set_title('Distribution of Age', fontsize=16, fontweight='bold')
-        ax.set_xlabel('Age', fontsize=12)
-        ax.set_ylabel('Frequency', fontsize=12)
-        ax.grid(True, alpha=0.3)
-        plt.tight_layout()
-        return fig
-
-    def show_smoker_non_smoker_count():
-        fig, ax = plt.subplots(figsize=(8, 6))
-        smoker_counts = df['smoker'].value_counts()
-        labels = ['Non-Smoker', 'Smoker']
-        counts = [smoker_counts.get(0, 0), smoker_counts.get(1, 0)]
-        colors = ['lightblue', 'lightcoral']
-        
-        bars = ax.bar(labels, counts, color=colors, alpha=0.8, edgecolor='black')
-        ax.set_title('Count of Smokers vs Non-Smokers', fontsize=16, fontweight='bold')
-        ax.set_xlabel('Smoking Status', fontsize=12)
-        ax.set_ylabel('Number of Individuals', fontsize=12)
-        
-        # Add count labels on bars
-        for bar, count in zip(bars, counts):
-            height = bar.get_height()
-            ax.text(bar.get_x() + bar.get_width()/2., height + max(counts) * 0.01,
-                   f'{count}', ha='center', va='bottom')
-        
-        plt.tight_layout()
-        return fig
-
-    def show_avg_bmi():
-        fig, ax = plt.subplots(figsize=(12, 6))
-        average_bmi = df['bmi'].mean()
-        ax.hist(df['bmi'], bins=30, color='purple', alpha=0.7, edgecolor='black')
-        ax.axvline(average_bmi, color='red', linestyle='--', linewidth=2,
-                   label=f'Mean BMI: {average_bmi:.2f}')
-        ax.set_title('Distribution of BMI', fontsize=16, fontweight='bold')
-        ax.set_xlabel('BMI', fontsize=12)
-        ax.set_ylabel('Frequency', fontsize=12)
-        ax.legend()
-        ax.grid(True, alpha=0.3)
-        plt.tight_layout()
-        return fig
-
-    def show_no_of_policyholders():
-        fig, ax = plt.subplots(figsize=(10, 6))
-        region_map = {0: 'Northeast', 1: 'Southeast', 2: 'Southwest', 3: 'Northwest'}
-        region_counts = df['region'].value_counts().sort_index()
-        
-        regions = [region_map[i] for i in sorted(region_map.keys())]
-        counts = [region_counts.get(i, 0) for i in sorted(region_map.keys())]
-        colors = ['#1f77b4', '#ff7f0e', '#2ca02c', '#d62728']
-        
-        bars = ax.bar(regions, counts, color=colors, alpha=0.8, edgecolor='black')
-        ax.set_title('Number of Policyholders by Region', fontsize=16, fontweight='bold')
-        ax.set_xlabel('Region', fontsize=12)
-        ax.set_ylabel('Number of Policyholders', fontsize=12)
-        ax.grid(True, alpha=0.3, axis='y')
-        
-        # Add count labels on bars
-        for bar, count in zip(bars, counts):
-            height = bar.get_height()
-            ax.text(bar.get_x() + bar.get_width()/2., height + max(counts) * 0.01,
-                   f'{count}', ha='center', va='bottom')
-        
-        plt.tight_layout()
-        return fig
-
-    def show_charge_age():
-        fig, ax = plt.subplots(figsize=(12, 8))
-        
-        # Filter data based on smoker status
-        smokers = df[df['smoker'] == 1]
-        non_smokers = df[df['smoker'] == 0]
-        
-        # Check if we have data
-        if len(non_smokers) > 0:
-            ax.scatter(non_smokers['age'], non_smokers['charges'], alpha=0.6, 
-                      color='blue', label='Non-Smoker', s=60)
-        if len(smokers) > 0:
-            ax.scatter(smokers['age'], smokers['charges'], alpha=0.6, 
-                      color='red', label='Smoker', s=60)
-        
-        ax.set_title('Charges vs. Age (Colored by Smoker Status)', fontsize=16, fontweight='bold')
-        ax.set_xlabel('Age', fontsize=12)
-        ax.set_ylabel('Charges ($)', fontsize=12)
-        ax.legend(title='Smoking Status')
-        ax.grid(True, alpha=0.3)
-        plt.tight_layout()
-        return fig
-
-    def show_charges_smokervsnon():
-        fig, ax = plt.subplots(figsize=(8, 6))
-        
-        # Get data for each group
-        non_smoker_charges = df[df['smoker'] == 0]['charges']
-        smoker_charges = df[df['smoker'] == 1]['charges']
-        
-        # Create box plot data
-        data_to_plot = []
-        labels = []
-        
-        if len(non_smoker_charges) > 0:
-            data_to_plot.append(non_smoker_charges)
-            labels.append('Non-Smoker')
-        
-        if len(smoker_charges) > 0:
-            data_to_plot.append(smoker_charges)
-            labels.append('Smoker')
-        
-        if data_to_plot:
-            box_plot = ax.boxplot(data_to_plot, labels=labels, patch_artist=True)
-            colors = ['lightblue', 'lightcoral'][:len(data_to_plot)]
-            
-            for patch, color in zip(box_plot['boxes'], colors):
-                patch.set_facecolor(color)
-                patch.set_alpha(0.7)
-        
-        ax.set_title('Medical Charges: Smokers vs Non-Smokers', fontsize=16, fontweight='bold')
-        ax.set_xlabel('Smoking Status', fontsize=12)
-        ax.set_ylabel('Charges ($)', fontsize=12)
-        ax.grid(True, alpha=0.3, axis='y')
-        plt.tight_layout()
-        return fig
-
-    def show_bmi_charge():
-        fig, ax = plt.subplots(figsize=(12, 8))
-        
-        # Filter data based on smoker status
-        smokers = df[df['smoker'] == 1]
-        non_smokers = df[df['smoker'] == 0]
-        
-        # Check if we have data
-        if len(non_smokers) > 0:
-            ax.scatter(non_smokers['bmi'], non_smokers['charges'], alpha=0.6, 
-                      color='blue', label='Non-Smoker', s=60)
-        if len(smokers) > 0:
-            ax.scatter(smokers['bmi'], smokers['charges'], alpha=0.6, 
-                      color='red', label='Smoker', s=60)
-        
-        ax.set_title('Charges vs. BMI (Colored by Smoker Status)', fontsize=16, fontweight='bold')
-        ax.set_xlabel('BMI', fontsize=12)
-        ax.set_ylabel('Charges ($)', fontsize=12)
-        ax.legend(title='Smoking Status')
-        ax.grid(True, alpha=0.3)
-        plt.tight_layout()
-        return fig
-
-    def show_men_women_charge():
-        fig, ax = plt.subplots(figsize=(10, 6))
-        
-        # Get data for each gender (0=Female, 1=Male in your encoding)
-        female_charges = df[df['sex'] == 0]['charges']
-        male_charges = df[df['sex'] == 1]['charges']
-        
-        # Create box plot data
-        data_to_plot = []
-        labels = []
-        
-        if len(female_charges) > 0:
-            data_to_plot.append(female_charges)
-            labels.append('Female')
-        
-        if len(male_charges) > 0:
-            data_to_plot.append(male_charges)
-            labels.append('Male')
-        
-        if data_to_plot:
-            box_plot = ax.boxplot(data_to_plot, labels=labels, patch_artist=True)
-            colors = ['pink', 'lightblue'][:len(data_to_plot)]
-            
-            for patch, color in zip(box_plot['boxes'], colors):
-                patch.set_facecolor(color)
-                patch.set_alpha(0.7)
-        
-        ax.set_title('Medical Charges: Male vs Female', fontsize=16, fontweight='bold')
-        ax.set_xlabel('Gender', fontsize=12)
-        ax.set_ylabel('Charges ($)', fontsize=12)
-        ax.grid(True, alpha=0.3, axis='y')
-        plt.tight_layout()
-        return fig
-
-    def show_correlation_children_charge():
-        fig, ax = plt.subplots(figsize=(10, 6))
-        children_avg = df.groupby('children')['charges'].mean()
-        
-        # Ensure we have data for children 0-5
-        children_range = range(0, max(6, children_avg.index.max() + 1))
-        avg_charges = [children_avg.get(i, 0) for i in children_range]
-        
-        colors = plt.cm.viridis(np.linspace(0, 1, len(children_range)))
-        bars = ax.bar(children_range, avg_charges, color=colors, alpha=0.8, edgecolor='black')
-        
-        ax.set_title('Average Charges by Number of Children', fontsize=16, fontweight='bold')
-        ax.set_xlabel('Number of Children', fontsize=12)
-        ax.set_ylabel('Average Charges ($)', fontsize=12)
-        ax.grid(True, alpha=0.3, axis='y')
-        
-        # Add value labels on bars
-        for bar, avg_charge in zip(bars, avg_charges):
-            if avg_charge > 0:
-                height = bar.get_height()
-                ax.text(bar.get_x() + bar.get_width()/2., height + max(avg_charges) * 0.01,
-                       f'${avg_charge:,.0f}', ha='center', va='bottom')
-        
-        plt.tight_layout()
-        return fig
-
-    def show_numeric_features():
-        fig, ax = plt.subplots(figsize=(8, 6))
-        numeric_cols = ['age', 'bmi', 'children', 'charges']
-        corr_matrix = df[numeric_cols].corr()
-        
-        # Create heatmap manually
-        im = ax.imshow(corr_matrix, cmap='coolwarm', vmin=-1, vmax=1)
-        
-        # Set ticks and labels
-        ax.set_xticks(range(len(numeric_cols)))
-        ax.set_yticks(range(len(numeric_cols)))
-        ax.set_xticklabels(numeric_cols)
-        ax.set_yticklabels(numeric_cols)
-        
-        # Add correlation values as text
-        for i in range(len(numeric_cols)):
-            for j in range(len(numeric_cols)):
-                text_color = 'white' if abs(corr_matrix.iloc[i, j]) > 0.5 else 'black'
-                ax.text(j, i, f'{corr_matrix.iloc[i, j]:.2f}', 
-                       ha='center', va='center', color=text_color)
-        
-        plt.colorbar(im, ax=ax, shrink=0.8)
-        ax.set_title('Correlation Between Numeric Features', fontsize=16, fontweight='bold')
-        plt.tight_layout()
-        return fig
-
-    # Questions dictionary
-    questions = {
-        "📈 Distribution of Charges": show_distribution_of_charges,
-        "👥 Age Distribution": show_age_distribution,
-        "🚭 Smokers vs Non-Smokers (Count)": show_smoker_non_smoker_count,
-        "⚖️ BMI Distribution": show_avg_bmi,
-        "🗺️ Policyholders by Region": show_no_of_policyholders,
-        "📊 Charges vs Age": show_charge_age,
-        "💰 Charges: Smokers vs Non-Smokers": show_charges_smokervsnon,
-        "📉 Charges vs BMI": show_bmi_charge,
-        "👫 Charges by Gender": show_men_women_charge,
-        "👶 Charges vs Number of Children": show_correlation_children_charge,
-        "🔗 Feature Correlations": show_numeric_features,
-    }
-
-    # Create selectbox for visualizations
-    selected_question = st.selectbox("🔍 Select a visualization:", list(questions.keys()))
-
-    # Create two columns
-    col1, col2 = st.columns([3, 1])
-
-    with col1:
-        # Execute selected visualization and display
-        try:
-            fig = questions[selected_question]()
-            st.pyplot(fig)
-            plt.close(fig)
-        except Exception as e:
-            st.error(f"Error creating visualization: {str(e)}")
-            # Debug information
-            st.write("Debug info:")
-            st.write(f"Data shape: {df.shape}")
-            st.write(f"Data columns: {df.columns.tolist()}")
-            st.write(f"First few rows: {df.head()}")
-
-    with col2:
-        st.markdown("### 💡 Insights")
-        if "Distribution of Charges" in selected_question:
-            st.info("Most insurance charges are concentrated in the lower range, with some high-cost outliers.")
-        elif "Smokers" in selected_question:
-            st.warning("Smokers typically have significantly higher insurance costs.")
-        elif "BMI" in selected_question:
-            st.info("Higher BMI combined with smoking leads to the highest charges.")
-        elif "Age" in selected_question:
-            st.info("Age has a positive correlation with charges, especially for smokers.")
-        elif "Gender" in selected_question:
-            st.info("Gender shows minimal impact on insurance charges.")
-        elif "Children" in selected_question:
-            st.info("Number of children has a moderate impact on insurance costs.")
-
-# Page 3: Prediction
-elif page == "💰 Cost Prediction":
-    st.title("💰 Predict Insurance Charges")
-
-    col1, col2 = st.columns([2, 1])
-
-    with col1:
-        st.subheader("📝 Enter Patient Details:")
-
-        # Create input form
-        with st.form("prediction_form"):
-            col_a, col_b = st.columns(2)
-
-            with col_a:
-                age = st.number_input("👤 Age", min_value=18, max_value=100, value=30, help="Patient's age in years")
-                bmi = st.number_input("⚖️ BMI", min_value=10.0, max_value=60.0, value=25.0, step=0.1,
-                                    help="Body Mass Index")
-                children = st.number_input("👶 Number of Children", min_value=0, max_value=10, value=0,
-                                         help="Number of dependent children")
-
-            with col_b:
-                smoker = st.selectbox("🚭 Smoker", ["No", "Yes"], help="Does the patient smoke?")
-                region = st.selectbox("🗺️ Region", ['Northeast', 'Southeast', 'Southwest', 'Northwest'],
-                                    help="Geographic region")
-                sex = st.selectbox("👫 Gender", ["Female", "Male"], help="Patient's gender")
-
-            submitted = st.form_submit_button("🔮 Predict Insurance Cost", use_container_width=True)
-
-        if submitted:
-            # Encode inputs
-            region_map = {'Northeast': 0, 'Southeast': 1, 'Southwest': 2, 'Northwest': 3}
-            region_encoded = region_map[region]
-            sex_encoded = 1 if sex == 'Male' else 0
-            smoker_encoded = 1 if smoker == 'Yes' else 0
-
-            # Create input dataframe
-            input_data = pd.DataFrame({
-                'age': [age],
-                'bmi': [bmi],
-                'children': [children],
-                'sex': [sex_encoded],
-                'smoker': [smoker_encoded],
-                'region': [region_encoded]
-            })
-
-            # Make prediction
-            try:
-                prediction = model.predict(input_data)[0]
-
-                # Display prediction
-                st.success(f"### 💰 Predicted Insurance Cost: ${prediction:,.2f}")
-
-                # Show input summary
-                st.subheader("📋 Input Summary:")
-                summary_df = pd.DataFrame({
-                    'Feature': ['Age', 'BMI', 'Children', 'Gender', 'Smoker', 'Region'],
-                    'Value': [age, f"{bmi:.1f}", children, sex, smoker, region]
-                })
-                st.table(summary_df)
-
-            except Exception as e:
-                st.error(f"Error making prediction: {str(e)}")
-
-    with col2:
-        st.markdown("### 💡 Prediction Tips")
-        st.info("**Age**: Older individuals typically have higher insurance costs")
-        st.info("**BMI**: Higher BMI may increase costs")
-        st.warning("**Smoking**: This is the biggest factor affecting insurance costs")
-        st.info("**Children**: More dependents usually increase costs")
-        st.info("**Region**: Different regions have varying cost structures")
-
-        # Show model info
-        st.markdown("### 🤖 Model Information")
-        st.success("**Model Type**: Random Forest Regressor")
-        st.success("**Features Used**: 6 key factors")
-
-# Footer
-st.sidebar.markdown("---")
-st.sidebar.markdown("### 📊 About This App")
-st.sidebar.info("This app demonstrates machine learning for insurance cost prediction using demographic and health factors.")
+elif page == "Prediction":
+    st.title("💰 Insurance Charge Prediction")
+    with st.form("predict_form"):
+        age = st.slider("Age", 18, 100, 30)
+        bmi = st.slider("BMI", 15.0, 50.0, 28.0)
+        children = st.slider("Children", 0, 5, 0)
+        sex = st.radio("Gender", ["Female", "Male"])
+        smoker = st.radio("Smoker", ["No", "Yes"])
+        region = st.selectbox("Region", ["Northeast", "Southeast", "Southwest", "Northwest"])
+        submitted = st.form_submit_button("Predict")
+    if submitted:
+        input_df = pd.DataFrame({
+            "age": [age],
+            "bmi": [bmi],
+            "children": [children],
+            "sex": [1 if sex=="Male" else 0],
+            "smoker": [1 if smoker=="Yes" else 0],
+            "region": [ {"Northeast":0, "Southeast":1, "Southwest":2, "Northwest":3}[region] ]
+        })
+        pred = model.predict(input_df)[0]
+        st.success(f"Estimated Insurance Charges: ${pred:,.2f}")
