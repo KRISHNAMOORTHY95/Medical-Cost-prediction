@@ -90,14 +90,24 @@ elif page == "Visualization":
         ax.hist(df["charges"], bins=30, color="teal", edgecolor="black")
         st.pyplot(fig)
     elif chart == "Charges vs Age":
-        sns.scatterplot(data=df, x="age", y="charges", hue="smoker")
-        st.pyplot(plt.gcf())
-    elif chart == "Charges vs BMI":
-        sns.scatterplot(data=df, x="bmi", y="charges", hue="smoker")
-        st.pyplot(plt.gcf())
-    elif chart == "Correlation Matrix":
-        sns.heatmap(df.corr(), annot=True, cmap="coolwarm")
-        st.pyplot(plt.gcf())
+    fig, ax = plt.subplots()
+    sns.scatterplot(data=df, x="age", y="charges", hue="smoker", ax=ax)
+    ax.set_title("Charges vs Age")
+    ax.grid(True, alpha=0.3)
+    st.pyplot(fig)
+
+elif chart == "Charges vs BMI":
+    fig, ax = plt.subplots()
+    sns.scatterplot(data=df, x="bmi", y="charges", hue="smoker", ax=ax)
+    ax.set_title("Charges vs BMI")
+    ax.grid(True, alpha=0.3)
+    st.pyplot(fig)
+
+elif chart == "Correlation Matrix":
+    fig, ax = plt.subplots()
+    sns.heatmap(df.corr(), annot=True, cmap="coolwarm", ax=ax)
+    ax.set_title("Correlation Matrix")
+    st.pyplot(fig)
 
 elif page == "Prediction":
     st.title("💰 Insurance Charge Prediction")
