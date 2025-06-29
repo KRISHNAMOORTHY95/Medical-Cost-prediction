@@ -89,7 +89,7 @@ elif page == "Visualization":
         fig, ax = plt.subplots()
         ax.hist(df["charges"], bins=30, color="teal", edgecolor="black")
         st.pyplot(fig)
-    elif chart == "Charges vs Age":
+elif chart == "Charges vs Age":
     fig, ax = plt.subplots()
     sns.scatterplot(data=df, x="age", y="charges", hue="smoker", ax=ax)
     ax.set_title("Charges vs Age")
