@@ -9,11 +9,14 @@ from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import LabelEncoder
 import pickle
 import warnings
+
+# Suppress warnings
 warnings.filterwarnings('ignore')
 
-# Set matplotlib backend for better Streamlit compatibility
-plt.style.use('default')
-sns.set_palette("husl")
+# Set matplotlib backend for Streamlit - this is crucial for deployment
+import matplotlib
+matplotlib.use('Agg')
+plt.ioff()  # Turn off interactive mode
 
 # Configure page
 st.set_page_config(
@@ -21,43 +24,6 @@ st.set_page_config(
     page_icon="🏥",
     layout="wide"
 )
-
-# Function to create sample data
-def create_sample_data():
-    np.random.seed(42)
-    n_samples = 1000
-
-    ages = np.random.randint(18, 65, n_samples)
-    bmis = np.random.normal(28, 6, n_samples)
-    bmis = np.clip(bmis, 15, 50)
-    children = np.random.randint(0, 6, n_samples)
-    smokers = np.random.choice([0, 1], n_samples, p=[0.8, 0.2])
-    sexes = np.random.choice([0, 1], n_samples)
-    regions = np.random.choice([0, 1, 2, 3], n_samples)
-
-    # Create charges with realistic relationships
-    charges = (
-        ages * 200 +
-        bmis * 100 +
-        children * 500 +
-        smokers * 15000 +
-        sexes * 200 +
-        regions * 300 +
-        np.random.normal(0, 2000, n_samples)
-    )
-    charges = np.clip(charges, 1000, 50000)
-
-    df = pd.DataFrame({
-        'age': ages,
-        'bmi': bmis,
-        'children': children,
-        'sex': sexes,
-        'smoker': smokers,
-        'region': regions,
-        'charges': charges
-    })
-    
-    return df
 
 # Function to create and train model if not exists
 @st.cache_data
@@ -69,9 +35,39 @@ def load_or_create_model():
         return model
     except FileNotFoundError:
         st.warning("Model file not found. Creating a new model with sample data.")
-        
-        # Create sample data
-        sample_df = create_sample_data()
+        # Create sample data for demonstration if model is not found
+        np.random.seed(42)
+        n_samples = 1000
+
+        ages = np.random.randint(18, 65, n_samples)
+        bmis = np.random.normal(28, 6, n_samples)
+        bmis = np.clip(bmis, 15, 50)
+        children = np.random.randint(0, 6, n_samples)
+        smokers = np.random.choice([0, 1], n_samples, p=[0.8, 0.2])
+        sexes = np.random.choice([0, 1], n_samples)
+        regions = np.random.choice([0, 1, 2, 3], n_samples)
+
+        # Create charges with realistic relationships
+        charges = (
+            ages * 200 +
+            bmis * 100 +
+            children * 500 +
+            smokers * 15000 +
+            sexes * 200 +
+            regions * 300 +
+            np.random.normal(0, 2000, n_samples)
+        )
+        charges = np.clip(charges, 1000, 50000)
+
+        sample_df = pd.DataFrame({
+            'age': ages,
+            'bmi': bmis,
+            'children': children,
+            'sex': sexes,
+            'smoker': smokers,
+            'region': regions,
+            'charges': charges
+        })
 
         # Train model
         X = sample_df[['age', 'bmi', 'children', 'sex', 'smoker', 'region']]
@@ -80,12 +76,12 @@ def load_or_create_model():
         model = RandomForestRegressor(n_estimators=100, random_state=42)
         model.fit(X, y)
 
-        # Try to save model (optional, may fail in some environments)
+        # Save model
         try:
             with open('model.pkl', 'wb') as f:
                 pickle.dump(model, f)
         except:
-            pass  # Ignore save errors
+            pass  # Might not have write permissions in deployment
 
         return model
 
@@ -98,11 +94,54 @@ def load_or_create_dataset():
         return df
     except FileNotFoundError:
         st.warning("Dataset file not found. Creating sample data for demonstration.")
-        return create_sample_data()
+        # Create sample data
+        np.random.seed(42)
+        n_samples = 1000
+
+        ages = np.random.randint(18, 65, n_samples)
+        bmis = np.random.normal(28, 6, n_samples)
+        bmis = np.clip(bmis, 15, 50)
+        children = np.random.randint(0, 6, n_samples)
+        smokers = np.random.choice([0, 1], n_samples, p=[0.8, 0.2])
+        sexes = np.random.choice([0, 1], n_samples)
+        regions = np.random.choice([0, 1, 2, 3], n_samples)
+
+        # Create charges with realistic relationships
+        charges = (
+            ages * 200 +
+            bmis * 100 +
+            children * 500 +
+            smokers * 15000 +
+            sexes * 200 +
+            regions * 300 +
+            np.random.normal(0, 2000, n_samples)
+        )
+        charges = np.clip(charges, 1000, 50000)
+
+        df = pd.DataFrame({
+            'age': ages,
+            'bmi': bmis,
+            'children': children,
+            'sex': sexes,
+            'smoker': smokers,
+            'region': regions,
+            'charges': charges
+        })
+
+        return df
 
 # Load model and data
 model = load_or_create_model()
 df = load_or_create_dataset()
+
+# Debug: Print data info
+if st.sidebar.checkbox("Show Debug Info"):
+    st.sidebar.write("Data shape:", df.shape)
+    st.sidebar.write("Data types:", df.dtypes)
+    st.sidebar.write("Sample data:")
+    st.sidebar.write(df.head())
+    st.sidebar.write("Unique values in smoker:", df['smoker'].unique())
+    st.sidebar.write("Unique values in sex:", df['sex'].unique())
 
 # Navigation
 st.sidebar.title("🏥 Navigation")
@@ -150,207 +189,386 @@ if page == "🏠 Project Introduction":
 elif page == "📊 Visualizations":
     st.title("📊 Exploratory Data Analysis")
 
-    # Streamlit native charts (most reliable)
+    # Improved visualization functions with better error handling
     def show_distribution_of_charges():
-        fig, ax = plt.subplots(figsize=(12, 6))
-        sns.histplot(df['charges'], kde=True, bins=30, color='teal', alpha=0.7, ax=ax)
-        ax.set_title('Distribution of Medical Insurance Charges', fontsize=16, fontweight='bold')
-        ax.set_xlabel('Charges ($)', fontsize=12)
-        ax.set_ylabel('Frequency', fontsize=12)
-        ax.grid(True, alpha=0.3)
-        plt.tight_layout()
-        return fig
+        try:
+            fig, ax = plt.subplots(figsize=(10, 6))
+            ax.hist(df['charges'], bins=30, color='teal', alpha=0.7, edgecolor='black')
+            ax.set_title('Distribution of Medical Insurance Charges', fontsize=14, fontweight='bold')
+            ax.set_xlabel('Charges ($)', fontsize=12)
+            ax.set_ylabel('Frequency', fontsize=12)
+            ax.grid(True, alpha=0.3)
+            plt.tight_layout()
+            return fig
+        except Exception as e:
+            st.error(f"Error creating distribution chart: {str(e)}")
+            return None
 
     def show_age_distribution():
-        fig, ax = plt.subplots(figsize=(12, 6))
-        sns.histplot(df['age'], kde=True, bins=20, color='skyblue', alpha=0.7, ax=ax)
-        ax.set_title('Distribution of Age', fontsize=16, fontweight='bold')
-        ax.set_xlabel('Age', fontsize=12)
-        ax.set_ylabel('Frequency', fontsize=12)
-        ax.grid(True, alpha=0.3)
-        plt.tight_layout()
-        return fig
+        try:
+            fig, ax = plt.subplots(figsize=(10, 6))
+            ax.hist(df['age'], bins=20, color='skyblue', alpha=0.7, edgecolor='black')
+            ax.set_title('Distribution of Age', fontsize=14, fontweight='bold')
+            ax.set_xlabel('Age', fontsize=12)
+            ax.set_ylabel('Frequency', fontsize=12)
+            ax.grid(True, alpha=0.3)
+            plt.tight_layout()
+            return fig
+        except Exception as e:
+            st.error(f"Error creating age distribution: {str(e)}")
+            return None
 
-    def smoker_count_chart(ax):
-        smoker_counts = df['smoker'].value_counts()
-        labels = ['Non-Smoker', 'Smoker']
-        colors = ['lightblue', 'salmon']
-        
-        bars = ax.bar(labels, [smoker_counts.get(0, 0), smoker_counts.get(1, 0)], 
-                     color=colors, alpha=0.8)
-        ax.set_title('Count of Smokers vs Non-Smokers', fontsize=14, fontweight='bold')
-        ax.set_ylabel('Count')
-        
-        # Add value labels
-        for bar in bars:
-            height = bar.get_height()
-            ax.text(bar.get_x() + bar.get_width()/2., height + 5,
-                   f'{int(height)}', ha='center', va='bottom')
+    def show_smoker_non_smoker_count():
+        try:
+            fig, ax = plt.subplots(figsize=(8, 6))
+            smoker_counts = df['smoker'].value_counts()
+            
+            # Ensure we have both categories
+            non_smoker_count = smoker_counts.get(0, 0)
+            smoker_count = smoker_counts.get(1, 0)
+            
+            labels = ['Non-Smoker', 'Smoker']
+            counts = [non_smoker_count, smoker_count]
+            colors = ['lightblue', 'lightcoral']
+            
+            bars = ax.bar(labels, counts, color=colors, alpha=0.8, edgecolor='black')
+            ax.set_title('Count of Smokers vs Non-Smokers', fontsize=14, fontweight='bold')
+            ax.set_xlabel('Smoking Status', fontsize=12)
+            ax.set_ylabel('Number of Individuals', fontsize=12)
+            
+            # Add count labels on bars
+            for bar, count in zip(bars, counts):
+                if count > 0:
+                    height = bar.get_height()
+                    ax.text(bar.get_x() + bar.get_width()/2., height + max(counts) * 0.01,
+                           f'{count}', ha='center', va='bottom', fontsize=10)
+            
+            plt.tight_layout()
+            return fig
+        except Exception as e:
+            st.error(f"Error creating smoker count chart: {str(e)}")
+            return None
 
-    def bmi_distribution_chart(ax):
-        ax.hist(df['bmi'], bins=30, alpha=0.7, color='purple', edgecolor='black')
-        ax.axvline(df['bmi'].mean(), color='red', linestyle='--', 
-                  label=f'Mean: {df["bmi"].mean():.1f}')
-        ax.set_title('BMI Distribution', fontsize=14, fontweight='bold')
-        ax.set_xlabel('BMI')
-        ax.set_ylabel('Frequency')
-        ax.legend()
-        ax.grid(True, alpha=0.3)
+    def show_avg_bmi():
+        try:
+            fig, ax = plt.subplots(figsize=(10, 6))
+            average_bmi = df['bmi'].mean()
+            ax.hist(df['bmi'], bins=30, color='purple', alpha=0.7, edgecolor='black')
+            ax.axvline(average_bmi, color='red', linestyle='--', linewidth=2,
+                       label=f'Mean BMI: {average_bmi:.2f}')
+            ax.set_title('Distribution of BMI', fontsize=14, fontweight='bold')
+            ax.set_xlabel('BMI', fontsize=12)
+            ax.set_ylabel('Frequency', fontsize=12)
+            ax.legend()
+            ax.grid(True, alpha=0.3)
+            plt.tight_layout()
+            return fig
+        except Exception as e:
+            st.error(f"Error creating BMI distribution: {str(e)}")
+            return None
 
-    def region_chart(ax):
-        region_map = {0: 'Northeast', 1: 'Southeast', 2: 'Southwest', 3: 'Northwest'}
-        region_counts = df['region'].map(region_map).value_counts()
-        
-        colors = ['#1f77b4', '#ff7f0e', '#2ca02c', '#d62728']
-        bars = ax.bar(region_counts.index, region_counts.values, 
-                     color=colors[:len(region_counts)], alpha=0.8)
-        ax.set_title('Policyholders by Region', fontsize=14, fontweight='bold')
-        ax.set_ylabel('Count')
-        ax.tick_params(axis='x', rotation=45)
-        
-        # Add value labels
-        for bar in bars:
-            height = bar.get_height()
-            ax.text(bar.get_x() + bar.get_width()/2., height + 5,
-                   f'{int(height)}', ha='center', va='bottom')
+    def show_no_of_policyholders():
+        try:
+            fig, ax = plt.subplots(figsize=(10, 6))
+            region_map = {0: 'Northeast', 1: 'Southeast', 2: 'Southwest', 3: 'Northwest'}
+            region_counts = df['region'].value_counts()
+            
+            regions = []
+            counts = []
+            colors = ['#1f77b4', '#ff7f0e', '#2ca02c', '#d62728']
+            
+            for i, region_name in region_map.items():
+                count = region_counts.get(i, 0)
+                regions.append(region_name)
+                counts.append(count)
+            
+            bars = ax.bar(regions, counts, color=colors[:len(regions)], alpha=0.8, edgecolor='black')
+            ax.set_title('Number of Policyholders by Region', fontsize=14, fontweight='bold')
+            ax.set_xlabel('Region', fontsize=12)
+            ax.set_ylabel('Number of Policyholders', fontsize=12)
+            ax.grid(True, alpha=0.3, axis='y')
+            
+            # Add count labels on bars
+            for bar, count in zip(bars, counts):
+                if count > 0:
+                    height = bar.get_height()
+                    ax.text(bar.get_x() + bar.get_width()/2., height + max(counts) * 0.01,
+                           f'{count}', ha='center', va='bottom', fontsize=10)
+            
+            plt.tight_layout()
+            return fig
+        except Exception as e:
+            st.error(f"Error creating region chart: {str(e)}")
+            return None
 
-    def charges_vs_age_chart(ax):
-        # Separate smokers and non-smokers
-        non_smokers = df[df['smoker'] == 0]
-        smokers = df[df['smoker'] == 1]
-        
-        ax.scatter(non_smokers['age'], non_smokers['charges'], 
-                  alpha=0.6, label='Non-Smoker', color='blue', s=30)
-        ax.scatter(smokers['age'], smokers['charges'], 
-                  alpha=0.6, label='Smoker', color='red', s=30)
-        
-        ax.set_title('Charges vs Age by Smoking Status', fontsize=14, fontweight='bold')
-        ax.set_xlabel('Age')
-        ax.set_ylabel('Charges ($)')
-        ax.legend()
-        ax.grid(True, alpha=0.3)
+    def show_charge_age():
+        try:
+            fig, ax = plt.subplots(figsize=(10, 6))
+            
+            # Filter data based on smoker status
+            smokers = df[df['smoker'] == 1]
+            non_smokers = df[df['smoker'] == 0]
+            
+            # Plot data
+            if len(non_smokers) > 0:
+                ax.scatter(non_smokers['age'], non_smokers['charges'], alpha=0.6, 
+                          color='blue', label='Non-Smoker', s=50)
+            if len(smokers) > 0:
+                ax.scatter(smokers['age'], smokers['charges'], alpha=0.6, 
+                          color='red', label='Smoker', s=50)
+            
+            ax.set_title('Charges vs. Age (Colored by Smoker Status)', fontsize=14, fontweight='bold')
+            ax.set_xlabel('Age', fontsize=12)
+            ax.set_ylabel('Charges ($)', fontsize=12)
+            if len(smokers) > 0 or len(non_smokers) > 0:
+                ax.legend(title='Smoking Status')
+            ax.grid(True, alpha=0.3)
+            plt.tight_layout()
+            return fig
+        except Exception as e:
+            st.error(f"Error creating age vs charges chart: {str(e)}")
+            return None
 
-    def smoker_charges_boxplot(ax):
-        smoker_data = [df[df['smoker'] == 0]['charges'], df[df['smoker'] == 1]['charges']]
-        box = ax.boxplot(smoker_data, labels=['Non-Smoker', 'Smoker'], patch_artist=True)
-        
-        # Color the boxes
-        colors = ['lightblue', 'salmon']
-        for patch, color in zip(box['boxes'], colors):
-            patch.set_facecolor(color)
-            patch.set_alpha(0.7)
-        
-        ax.set_title('Charges: Smokers vs Non-Smokers', fontsize=14, fontweight='bold')
-        ax.set_ylabel('Charges ($)')
-        ax.grid(True, alpha=0.3)
+    def show_charges_smokervsnon():
+        try:
+            fig, ax = plt.subplots(figsize=(8, 6))
+            
+            # Get data for each group
+            non_smoker_charges = df[df['smoker'] == 0]['charges']
+            smoker_charges = df[df['smoker'] == 1]['charges']
+            
+            # Create box plot data
+            data_to_plot = []
+            labels = []
+            colors = []
+            
+            if len(non_smoker_charges) > 0:
+                data_to_plot.append(non_smoker_charges.values)
+                labels.append('Non-Smoker')
+                colors.append('lightblue')
+            
+            if len(smoker_charges) > 0:
+                data_to_plot.append(smoker_charges.values)
+                labels.append('Smoker')
+                colors.append('lightcoral')
+            
+            if data_to_plot:
+                box_plot = ax.boxplot(data_to_plot, labels=labels, patch_artist=True)
+                
+                for patch, color in zip(box_plot['boxes'], colors):
+                    patch.set_facecolor(color)
+                    patch.set_alpha(0.7)
+            
+            ax.set_title('Medical Charges: Smokers vs Non-Smokers', fontsize=14, fontweight='bold')
+            ax.set_xlabel('Smoking Status', fontsize=12)
+            ax.set_ylabel('Charges ($)', fontsize=12)
+            ax.grid(True, alpha=0.3, axis='y')
+            plt.tight_layout()
+            return fig
+        except Exception as e:
+            st.error(f"Error creating smoker comparison chart: {str(e)}")
+            return None
 
-    def charges_vs_bmi_chart(ax):
-        non_smokers = df[df['smoker'] == 0]
-        smokers = df[df['smoker'] == 1]
-        
-        ax.scatter(non_smokers['bmi'], non_smokers['charges'], 
-                  alpha=0.6, label='Non-Smoker', color='blue', s=30)
-        ax.scatter(smokers['bmi'], smokers['charges'], 
-                  alpha=0.6, label='Smoker', color='red', s=30)
-        
-        ax.set_title('Charges vs BMI by Smoking Status', fontsize=14, fontweight='bold')
-        ax.set_xlabel('BMI')
-        ax.set_ylabel('Charges ($)')
-        ax.legend()
-        ax.grid(True, alpha=0.3)
+    def show_bmi_charge():
+        try:
+            fig, ax = plt.subplots(figsize=(10, 6))
+            
+            # Filter data based on smoker status
+            smokers = df[df['smoker'] == 1]
+            non_smokers = df[df['smoker'] == 0]
+            
+            # Plot data
+            if len(non_smokers) > 0:
+                ax.scatter(non_smokers['bmi'], non_smokers['charges'], alpha=0.6, 
+                          color='blue', label='Non-Smoker', s=50)
+            if len(smokers) > 0:
+                ax.scatter(smokers['bmi'], smokers['charges'], alpha=0.6, 
+                          color='red', label='Smoker', s=50)
+            
+            ax.set_title('Charges vs. BMI (Colored by Smoker Status)', fontsize=14, fontweight='bold')
+            ax.set_xlabel('BMI', fontsize=12)
+            ax.set_ylabel('Charges ($)', fontsize=12)
+            if len(smokers) > 0 or len(non_smokers) > 0:
+                ax.legend(title='Smoking Status')
+            ax.grid(True, alpha=0.3)
+            plt.tight_layout()
+            return fig
+        except Exception as e:
+            st.error(f"Error creating BMI vs charges chart: {str(e)}")
+            return None
 
-    def gender_charges_chart(ax):
-        gender_data = [df[df['sex'] == 0]['charges'], df[df['sex'] == 1]['charges']]
-        box = ax.boxplot(gender_data, labels=['Female', 'Male'], patch_artist=True)
-        
-        colors = ['pink', 'lightblue']
-        for patch, color in zip(box['boxes'], colors):
-            patch.set_facecolor(color)
-            patch.set_alpha(0.7)
-        
-        ax.set_title('Charges by Gender', fontsize=14, fontweight='bold')
-        ax.set_ylabel('Charges ($)')
-        ax.grid(True, alpha=0.3)
+    def show_men_women_charge():
+        try:
+            fig, ax = plt.subplots(figsize=(8, 6))
+            
+            # Get data for each gender (0=Female, 1=Male in your encoding)
+            female_charges = df[df['sex'] == 0]['charges']
+            male_charges = df[df['sex'] == 1]['charges']
+            
+            # Create box plot data
+            data_to_plot = []
+            labels = []
+            colors = []
+            
+            if len(female_charges) > 0:
+                data_to_plot.append(female_charges.values)
+                labels.append('Female')
+                colors.append('pink')
+            
+            if len(male_charges) > 0:
+                data_to_plot.append(male_charges.values)
+                labels.append('Male')
+                colors.append('lightblue')
+            
+            if data_to_plot:
+                box_plot = ax.boxplot(data_to_plot, labels=labels, patch_artist=True)
+                
+                for patch, color in zip(box_plot['boxes'], colors):
+                    patch.set_facecolor(color)
+                    patch.set_alpha(0.7)
+            
+            ax.set_title('Medical Charges: Male vs Female', fontsize=14, fontweight='bold')
+            ax.set_xlabel('Gender', fontsize=12)
+            ax.set_ylabel('Charges ($)', fontsize=12)
+            ax.grid(True, alpha=0.3, axis='y')
+            plt.tight_layout()
+            return fig
+        except Exception as e:
+            st.error(f"Error creating gender comparison chart: {str(e)}")
+            return None
 
-    def children_charges_chart(ax):
-        children_avg = df.groupby('children')['charges'].mean()
-        
-        bars = ax.bar(children_avg.index, children_avg.values, 
-                     color='green', alpha=0.7)
-        ax.set_title('Average Charges by Number of Children', fontsize=14, fontweight='bold')
-        ax.set_xlabel('Number of Children')
-        ax.set_ylabel('Average Charges ($)')
-        ax.grid(True, alpha=0.3)
-        
-        # Add value labels
-        for bar, value in zip(bars, children_avg.values):
-            ax.text(bar.get_x() + bar.get_width()/2., bar.get_height() + 200,
-                   f'${value:,.0f}', ha='center', va='bottom')
+    def show_correlation_children_charge():
+        try:
+            fig, ax = plt.subplots(figsize=(10, 6))
+            children_avg = df.groupby('children')['charges'].mean()
+            
+            # Get the range of children values
+            min_children = df['children'].min()
+            max_children = df['children'].max()
+            children_range = range(int(min_children), int(max_children) + 1)
+            
+            avg_charges = []
+            actual_children = []
+            
+            for i in children_range:
+                if i in children_avg.index:
+                    avg_charges.append(children_avg[i])
+                    actual_children.append(i)
+            
+            if avg_charges:
+                colors = plt.cm.viridis(np.linspace(0, 1, len(actual_children)))
+                bars = ax.bar(actual_children, avg_charges, color=colors, alpha=0.8, edgecolor='black')
+                
+                # Add value labels on bars
+                for bar, avg_charge in zip(bars, avg_charges):
+                    height = bar.get_height()
+                    ax.text(bar.get_x() + bar.get_width()/2., height + max(avg_charges) * 0.01,
+                           f'${avg_charge:,.0f}', ha='center', va='bottom', fontsize=9)
+            
+            ax.set_title('Average Charges by Number of Children', fontsize=14, fontweight='bold')
+            ax.set_xlabel('Number of Children', fontsize=12)
+            ax.set_ylabel('Average Charges ($)', fontsize=12)
+            ax.grid(True, alpha=0.3, axis='y')
+            plt.tight_layout()
+            return fig
+        except Exception as e:
+            st.error(f"Error creating children correlation chart: {str(e)}")
+            return None
 
-    def correlation_heatmap(ax):
-        numeric_cols = ['age', 'bmi', 'children', 'charges']
-        corr_matrix = df[numeric_cols].corr()
-        
-        im = ax.imshow(corr_matrix, cmap='coolwarm', aspect='auto')
-        
-        # Add labels
-        ax.set_xticks(range(len(numeric_cols)))
-        ax.set_yticks(range(len(numeric_cols)))
-        ax.set_xticklabels(numeric_cols)
-        ax.set_yticklabels(numeric_cols)
-        
-        # Add correlation values
-        for i in range(len(numeric_cols)):
-            for j in range(len(numeric_cols)):
-                ax.text(j, i, f'{corr_matrix.iloc[i, j]:.2f}',
-                       ha='center', va='center', color='black')
-        
-        ax.set_title('Feature Correlations', fontsize=14, fontweight='bold')
-        plt.colorbar(im, ax=ax, shrink=0.8)
+    def show_numeric_features():
+        try:
+            fig, ax = plt.subplots(figsize=(8, 6))
+            numeric_cols = ['age', 'bmi', 'children', 'charges']
+            
+            # Ensure all columns exist
+            available_cols = [col for col in numeric_cols if col in df.columns]
+            
+            if len(available_cols) >= 2:
+                corr_matrix = df[available_cols].corr()
+                
+                # Create heatmap manually
+                im = ax.imshow(corr_matrix.values, cmap='coolwarm', vmin=-1, vmax=1, aspect='auto')
+                
+                # Set ticks and labels
+                ax.set_xticks(range(len(available_cols)))
+                ax.set_yticks(range(len(available_cols)))
+                ax.set_xticklabels(available_cols, rotation=45)
+                ax.set_yticklabels(available_cols)
+                
+                # Add correlation values as text
+                for i in range(len(available_cols)):
+                    for j in range(len(available_cols)):
+                        text_color = 'white' if abs(corr_matrix.iloc[i, j]) > 0.5 else 'black'
+                        ax.text(j, i, f'{corr_matrix.iloc[i, j]:.2f}', 
+                               ha='center', va='center', color=text_color, fontsize=10)
+                
+                plt.colorbar(im, ax=ax, shrink=0.8)
+                ax.set_title('Correlation Between Numeric Features', fontsize=14, fontweight='bold')
+            else:
+                ax.text(0.5, 0.5, 'Insufficient numeric columns for correlation', 
+                       ha='center', va='center', transform=ax.transAxes)
+                ax.set_title('Correlation Matrix', fontsize=14, fontweight='bold')
+            
+            plt.tight_layout()
+            return fig
+        except Exception as e:
+            st.error(f"Error creating correlation matrix: {str(e)}")
+            return None
 
-    # Visualization options
-    viz_options = {
-        "📈 Distribution of Charges (Native)": show_distribution_of_charges,
-        "👥 Age Distribution (Native)": show_age_distribution_native,
-        "🚭 Smokers vs Non-Smokers Count": lambda: create_matplotlib_chart(smoker_count_chart, "Smoker Count"),
-        "⚖️ BMI Distribution": lambda: create_matplotlib_chart(bmi_distribution_chart, "BMI Distribution"),
-        "🗺️ Policyholders by Region": lambda: create_matplotlib_chart(region_chart, "Region Chart"),
-        "📊 Charges vs Age": lambda: create_matplotlib_chart(charges_vs_age_chart, "Charges vs Age"),
-        "💰 Smoker Charges Comparison": lambda: create_matplotlib_chart(smoker_charges_boxplot, "Smoker Charges"),
-        "📉 Charges vs BMI": lambda: create_matplotlib_chart(charges_vs_bmi_chart, "Charges vs BMI"),
-        "👫 Gender Charges Comparison": lambda: create_matplotlib_chart(gender_charges_chart, "Gender Charges"),
-        "👶 Children vs Charges": lambda: create_matplotlib_chart(children_charges_chart, "Children Charges"),
-        "🔗 Feature Correlations": lambda: create_matplotlib_chart(correlation_heatmap, "Correlations"),
+    # Questions dictionary
+    questions = {
+        "📈 Distribution of Charges": show_distribution_of_charges,
+        "👥 Age Distribution": show_age_distribution,
+        "🚭 Smokers vs Non-Smokers (Count)": show_smoker_non_smoker_count,
+        "⚖️ BMI Distribution": show_avg_bmi,
+        "🗺️ Policyholders by Region": show_no_of_policyholders,
+        "📊 Charges vs Age": show_charge_age,
+        "💰 Charges: Smokers vs Non-Smokers": show_charges_smokervsnon,
+        "📉 Charges vs BMI": show_bmi_charge,
+        "👫 Charges by Gender": show_men_women_charge,
+        "👶 Charges vs Number of Children": show_correlation_children_charge,
+        "🔗 Feature Correlations": show_numeric_features,
     }
 
-    # Visualization selector
-    selected_viz = st.selectbox("🔍 Select a visualization:", list(viz_options.keys()))
+    # Create selectbox for visualizations
+    selected_question = st.selectbox("🔍 Select a visualization:", list(questions.keys()))
 
-    # Create columns for layout
+    # Create two columns
     col1, col2 = st.columns([3, 1])
 
     with col1:
-        # Execute selected visualization
-        viz_options[selected_viz]()
+        # Execute selected visualization and display
+        try:
+            fig = questions[selected_question]()
+            if fig is not None:
+                st.pyplot(fig)
+                plt.close(fig)  # Important: close figure to free memory
+            else:
+                st.error("Could not generate the selected visualization.")
+        except Exception as e:
+            st.error(f"Error creating visualization: {str(e)}")
+            # Debug information
+            with st.expander("Debug Information"):
+                st.write(f"Data shape: {df.shape}")
+                st.write(f"Data columns: {df.columns.tolist()}")
+                st.write(f"Data types: {df.dtypes}")
+                st.write("First few rows:")
+                st.write(df.head())
 
     with col2:
         st.markdown("### 💡 Insights")
-        if "Distribution" in selected_viz:
-            st.info("Most charges are in the lower range with some high outliers.")
-        elif "Smoker" in selected_viz:
-            st.warning("Smoking significantly increases insurance costs.")
-        elif "BMI" in selected_viz:
-            st.info("Higher BMI combined with smoking leads to highest charges.")
-        elif "Age" in selected_viz:
-            st.info("Age correlates positively with charges, especially for smokers.")
-        elif "Gender" in selected_viz:
-            st.info("Gender shows minimal impact on charges.")
-        elif "Children" in selected_viz:
-            st.info("More children generally increase insurance costs.")
-        elif "Region" in selected_viz:
-            st.info("Regional differences in policyholder distribution.")
-        elif "Correlation" in selected_viz:
-            st.info("Shows relationships between numeric features.")
+        if "Distribution of Charges" in selected_question:
+            st.info("Most insurance charges are concentrated in the lower range, with some high-cost outliers.")
+        elif "Smokers" in selected_question:
+            st.warning("Smokers typically have significantly higher insurance costs.")
+        elif "BMI" in selected_question:
+            st.info("Higher BMI combined with smoking leads to the highest charges.")
+        elif "Age" in selected_question:
+            st.info("Age has a positive correlation with charges, especially for smokers.")
+        elif "Gender" in selected_question:
+            st.info("Gender shows minimal impact on insurance charges.")
+        elif "Children" in selected_question:
+            st.info("Number of children has a moderate impact on insurance costs.")
 
 # Page 3: Prediction
 elif page == "💰 Cost Prediction":
@@ -366,14 +584,17 @@ elif page == "💰 Cost Prediction":
             col_a, col_b = st.columns(2)
 
             with col_a:
-                age = st.number_input("👤 Age", min_value=18, max_value=100, value=30)
-                bmi = st.number_input("⚖️ BMI", min_value=10.0, max_value=60.0, value=25.0, step=0.1)
-                children = st.number_input("👶 Number of Children", min_value=0, max_value=10, value=0)
+                age = st.number_input("👤 Age", min_value=18, max_value=100, value=30, help="Patient's age in years")
+                bmi = st.number_input("⚖️ BMI", min_value=10.0, max_value=60.0, value=25.0, step=0.1,
+                                    help="Body Mass Index")
+                children = st.number_input("👶 Number of Children", min_value=0, max_value=10, value=0,
+                                         help="Number of dependent children")
 
             with col_b:
-                smoker = st.selectbox("🚭 Smoker", ["No", "Yes"])
-                region = st.selectbox("🗺️ Region", ['Northeast', 'Southeast', 'Southwest', 'Northwest'])
-                sex = st.selectbox("👫 Gender", ["Female", "Male"])
+                smoker = st.selectbox("🚭 Smoker", ["No", "Yes"], help="Does the patient smoke?")
+                region = st.selectbox("🗺️ Region", ['Northeast', 'Southeast', 'Southwest', 'Northwest'],
+                                    help="Geographic region")
+                sex = st.selectbox("👫 Gender", ["Female", "Male"], help="Patient's gender")
 
             submitted = st.form_submit_button("🔮 Predict Insurance Cost", use_container_width=True)
 
@@ -397,6 +618,8 @@ elif page == "💰 Cost Prediction":
             # Make prediction
             try:
                 prediction = model.predict(input_data)[0]
+
+                # Display prediction
                 st.success(f"### 💰 Predicted Insurance Cost: ${prediction:,.2f}")
 
                 # Show input summary
@@ -407,22 +630,51 @@ elif page == "💰 Cost Prediction":
                 })
                 st.table(summary_df)
 
+                # Additional insights
+                if smoker == 'Yes':
+                    st.warning("⚠️ Smoking significantly increases insurance costs!")
+                if bmi > 30:
+                    st.info("ℹ️ High BMI may contribute to increased costs")
+                if age > 50:
+                    st.info("ℹ️ Age is a significant factor in insurance pricing")
+
             except Exception as e:
                 st.error(f"Error making prediction: {str(e)}")
+                st.write("Debug info:")
+                st.write(f"Input data shape: {input_data.shape}")
+                st.write(f"Input data: {input_data}")
 
     with col2:
         st.markdown("### 💡 Prediction Tips")
-        st.info("**Age**: Older individuals typically have higher costs")
+        st.info("**Age**: Older individuals typically have higher insurance costs")
         st.info("**BMI**: Higher BMI may increase costs")
-        st.warning("**Smoking**: Biggest factor affecting costs")
+        st.warning("**Smoking**: This is the biggest factor affecting insurance costs")
         st.info("**Children**: More dependents usually increase costs")
-        st.info("**Region**: Different regions have varying costs")
+        st.info("**Region**: Different regions have varying cost structures")
 
+        # Show model info
         st.markdown("### 🤖 Model Information")
-        st.success("**Model**: Random Forest Regressor")
-        st.success("**Features**: 6 key factors")
+        st.success("**Model Type**: Random Forest Regressor")
+        st.success("**Features Used**: 6 key factors")
+        
+        # Show data statistics
+        st.markdown("### 📊 Dataset Stats")
+        st.metric("Total Records", len(df))
+        st.metric("Average Cost", f"${df['charges'].mean():,.0f}")
 
 # Footer
 st.sidebar.markdown("---")
 st.sidebar.markdown("### 📊 About This App")
-st.sidebar.info("ML-powered insurance cost prediction using demographic and health factors.")
+st.sidebar.info("This app demonstrates machine learning for insurance cost prediction using demographic and health factors.")
+
+# Add requirements.txt information
+st.sidebar.markdown("### 📋 Requirements")
+with st.sidebar.expander("View Requirements"):
+    st.code("""
+streamlit
+pandas
+matplotlib
+seaborn
+numpy
+scikit-learn
+    """)
